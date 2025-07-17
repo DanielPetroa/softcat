@@ -1,0 +1,665 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}
+    {% if action == 'create' %}Create Geometry{% else %}Edit Geometry{% endif %} - LCK Insurance System
+{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet Draw CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<style>
+    #geometry-map {
+        height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 15px;
+    }
+    .geojson-editor {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+    }
+    .map-instructions {
+        background-color: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    .validation-status {
+        padding: 8px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+    .validation-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    .validation-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    .coordinates-counter {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        border: 1px solid #ddd;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">
+                        {% if action == 'create' %}Create New Geometry{% else %}Edit Geometry: {{ geometria.nombre }}{% endif %}
+                    </h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'geometry_list' %}">Geometries</a></li>
+                        <li class="breadcrumb-item active">
+                            {% if action == 'create' %}Create Geometry{% else %}Edit Geometry{% endif %}
+                        </li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'geometry_list' %}" class="btn btn-sm btn-outline-secondary">
+                        <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                        Back to Geometries
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">
+                            <i data-feather="{% if action == 'create' %}plus{% else %}edit-2{% endif %}" class="align-self-center icon-xs mr-2"></i>
+                            Geometry Information
+                        </h4>
+                        <p class="text-muted mb-0">
+                            {% if action == 'create' %}
+                                Create a new geometry by filling the form and drawing on the map below.
+                            {% else %}
+                                Update the geometry details and modify the shape on the map if needed.
+                            {% endif %}
+                        </p>
+                    </div><!--end col-->
+                    {% if action == 'edit' and geometria %}
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            {% if geometria.monitoreo_activo %}
+                                <span class="badge badge-soft-success mr-2">
+                                    <i data-feather="activity" class="icon-xs mr-1"></i>
+                                    Active Monitoring
+                                </span>
+                            {% else %}
+                                <span class="badge badge-soft-secondary mr-2">
+                                    <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                    Inactive Monitoring
+                                </span>
+                            {% endif %}
+                            <span class="badge badge-soft-primary">
+                                ID: {{ geometria.id_geometria }}
+                            </span>
+                        </div>
+                    </div><!--end col-->
+                    {% endif %}
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                <!-- Form Errors -->
+                {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <h6><i data-feather="alert-circle" class="align-self-center icon-xs mr-1"></i> Please correct the following errors:</h6>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field|capfirst }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <form method="post" class="needs-validation" novalidate id="geometry-form">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="info" class="icon-xs mr-2"></i>
+                                Basic Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                            <i data-feather="map" class="icon-xs mr-1"></i>
+                                            {{ form.nombre.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.nombre }}
+                                        {% if form.nombre.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.nombre.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Descriptive name for this geometry.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.id_cliente.id_for_label }}" class="form-label">
+                                            <i data-feather="user" class="icon-xs mr-1"></i>
+                                            {{ form.id_cliente.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.id_cliente }}
+                                        {% if form.id_cliente.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.id_cliente.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Select the client that owns this geometry.</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-switch switch-success">
+                                            {{ form.monitoreo_activo }}
+                                            <label class="custom-control-label" for="{{ form.monitoreo_activo.id_for_label }}">
+                                                <i data-feather="activity" class="icon-xs mr-1"></i>
+                                                {{ form.monitoreo_activo.label }}
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">Enable real-time monitoring for this geometry.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Map Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="globe" class="icon-xs mr-2"></i>
+                                Interactive Map Editor
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="map-instructions">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <i data-feather="info" class="text-primary" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <div class="col">
+                                        <strong>How to use the map editor:</strong>
+                                        <ul class="mb-0 mt-1">
+                                            <li>Use the drawing tools on the left to create points, lines, or polygons</li>
+                                            <li>Click and drag to move shapes, or use the edit tool to modify vertices</li>
+                                            <li>The GeoJSON will be automatically updated as you draw</li>
+                                            <li>You can also manually edit the GeoJSON in the text area below</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="position: relative;">
+                                <div id="geometry-map"></div>
+                                <div class="coordinates-counter" id="coords-counter">
+                                    Ready to draw
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GeoJSON Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="code" class="icon-xs mr-2"></i>
+                                GeoJSON Data
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="{{ form.geojson_text.id_for_label }}" class="form-label">
+                                    <i data-feather="file-text" class="icon-xs mr-1"></i>
+                                    {{ form.geojson_text.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.geojson_text }}
+                                {% if form.geojson_text.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.geojson_text.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div id="validation-status" class="validation-status" style="display: none;"></div>
+                                <small class="form-text text-muted">
+                                    Valid GeoJSON geometry. You can paste GeoJSON here or use the map editor above.
+                                </small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="validateGeoJSON()">
+                                        <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                        Validate GeoJSON
+                                    </button>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="formatGeoJSON()">
+                                        <i data-feather="code" class="icon-xs mr-1"></i>
+                                        Format JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden field for actual geojson -->
+                    {{ form.geojson }}
+
+                    <hr class="my-4">
+
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i data-feather="{% if action == 'create' %}plus{% else %}save{% endif %}" class="align-self-center icon-xs mr-2"></i>
+                                    {% if action == 'create' %}Create Geometry{% else %}Update Geometry{% endif %}
+                                </button>
+                                <a href="{% if action == 'edit' and geometria %}{% url 'geometry_detail' geometria.pk %}{% else %}{% url 'geometry_list' %}{% endif %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                    <i data-feather="x" class="align-self-center icon-xs mr-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Helper Information Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card bg-light-alt">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="help-circle" class="text-info" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Geometry Guidelines</h6>
+                        <ul class="mb-0 small text-muted">
+                            <li><strong>Points:</strong> Use for specific locations like buildings or facilities</li>
+                            <li><strong>Polygons:</strong> Use for areas like property boundaries or coverage zones</li>
+                            <li><strong>Lines:</strong> Use for routes, pipelines, or linear infrastructure</li>
+                            <li><strong>Coordinates:</strong> Always in [longitude, latitude] format</li>
+                            <li><strong>Monitoring:</strong> Enable monitoring to track events in this geometry</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Draw JS -->
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+<script>
+let map;
+let drawnItems;
+let drawControl;
+
+// Map data for editing (if available)
+{% if map_data %}
+const mapData = {{ map_data|safe }};
+{% else %}
+const mapData = null;
+{% endif %}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    initializeFormValidation();
+    
+    // Add event listener for GeoJSON text changes
+    const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+    geojsonTextarea.addEventListener('input', function() {
+        updateMapFromGeoJSON();
+        updateCoordinatesCounter();
+    });
+});
+
+function initializeMap() {
+    // Initialize the map
+    map = L.map('geometry-map').setView([4.6097, -74.0817], 6); // Colombia center
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Initialize FeatureGroup to store editable layers
+    drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+    
+    // Initialize draw control
+    drawControl = new L.Control.Draw({
+        position: 'topleft',
+        draw: {
+            polygon: {
+                allowIntersection: false,
+                drawError: {
+                    color: '#e1e100',
+                    message: '<strong>Oh snap!</strong> you can\'t draw that!'
+                },
+                shapeOptions: {
+                    color: '#007bff',
+                    weight: 3,
+                    fillOpacity: 0.2
+                }
+            },
+            polyline: {
+                shapeOptions: {
+                    color: '#007bff',
+                    weight: 4
+                }
+            },
+            rectangle: {
+                shapeOptions: {
+                    color: '#007bff',
+                    weight: 3,
+                    fillOpacity: 0.2
+                }
+            },
+            circle: false, // Disable circle as it's not valid GeoJSON
+            marker: {
+                icon: new L.Icon({
+                    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }
+        },
+        edit: {
+            featureGroup: drawnItems,
+            remove: true
+        }
+    });
+    map.addControl(drawControl);
+    
+    // Event handlers for drawing
+    map.on('draw:created', function (e) {
+        const layer = e.layer;
+        drawnItems.addLayer(layer);
+        updateGeoJSONFromMap();
+        updateCoordinatesCounter();
+    });
+    
+    map.on('draw:edited', function (e) {
+        updateGeoJSONFromMap();
+        updateCoordinatesCounter();
+    });
+    
+    map.on('draw:deleted', function (e) {
+        updateGeoJSONFromMap();
+        updateCoordinatesCounter();
+    });
+    
+    // Load existing geometry if editing
+    if (mapData && mapData.geometry) {
+        loadGeometryToMap(mapData.geometry);
+    }
+}
+
+function loadGeometryToMap(geometry) {
+    try {
+        // Clear existing layers
+        drawnItems.clearLayers();
+        
+        // Add geometry to map
+        const layer = L.geoJSON(geometry, {
+            style: {
+                color: '#007bff',
+                weight: 3,
+                fillOpacity: 0.2
+            },
+            pointToLayer: function(feature, latlng) {
+                return L.marker(latlng, {
+                    icon: new L.Icon({
+                        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                });
+            }
+        });
+        
+        // Add each feature to drawnItems
+        layer.eachLayer(function(l) {
+            drawnItems.addLayer(l);
+        });
+        
+        // Fit map to geometry
+        if (drawnItems.getLayers().length > 0) {
+            map.fitBounds(drawnItems.getBounds(), {padding: [20, 20]});
+        }
+        
+        updateCoordinatesCounter();
+    } catch (error) {
+        console.error('Error loading geometry to map:', error);
+    }
+}
+
+function updateGeoJSONFromMap() {
+    const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+    
+    if (drawnItems.getLayers().length === 0) {
+        // No geometry drawn
+        geojsonTextarea.value = '';
+        return;
+    }
+    
+    try {
+        // Convert drawnItems to GeoJSON
+        const geojson = drawnItems.toGeoJSON();
+        
+        // If there's only one feature, extract it (most common case)
+        let geometry;
+        if (geojson.features.length === 1) {
+            geometry = geojson.features[0].geometry;
+        } else if (geojson.features.length > 1) {
+            // Multiple features - create a GeometryCollection
+            geometry = {
+                type: 'GeometryCollection',
+                geometries: geojson.features.map(f => f.geometry)
+            };
+        }
+        
+        // Update textarea
+        geojsonTextarea.value = JSON.stringify(geometry, null, 2);
+        
+        // Trigger validation
+        validateGeoJSON();
+    } catch (error) {
+        console.error('Error updating GeoJSON from map:', error);
+    }
+}
+
+function updateMapFromGeoJSON() {
+    const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+    const geojsonText = geojsonTextarea.value.trim();
+    
+    if (!geojsonText) {
+        drawnItems.clearLayers();
+        return;
+    }
+    
+    try {
+        const geometry = JSON.parse(geojsonText);
+        loadGeometryToMap(geometry);
+    } catch (error) {
+        console.error('Error updating map from GeoJSON:', error);
+    }
+}
+
+function updateCoordinatesCounter() {
+    const counter = document.getElementById('coords-counter');
+    const layers = drawnItems.getLayers();
+    
+    if (layers.length === 0) {
+        counter.textContent = 'Ready to draw';
+        return;
+    }
+    
+    let totalPoints = 0;
+    layers.forEach(layer => {
+        if (layer instanceof L.Marker) {
+            totalPoints += 1;
+        } else if (layer.getLatLngs) {
+            const latlngs = layer.getLatLngs();
+            if (Array.isArray(latlngs[0])) {
+                // Polygon
+                totalPoints += latlngs[0].length;
+            } else {
+                // LineString
+                totalPoints += latlngs.length;
+            }
+        }
+    });
+    
+    const geometryType = layers[0] instanceof L.Marker ? 'Point' : 
+                        layers[0] instanceof L.Polyline ? 'Line' : 'Polygon';
+    
+    counter.textContent = `${geometryType}: ${totalPoints} points`;
+}
+
+function validateGeoJSON() {
+    const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+    const statusDiv = document.getElementById('validation-status');
+    const geojsonText = geojsonTextarea.value.trim();
+    
+    if (!geojsonText) {
+        statusDiv.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const geometry = JSON.parse(geojsonText);
+        
+        // Basic validation
+        if (!geometry.type) {
+            throw new Error('GeoJSON must have a "type" field');
+        }
+        
+        const validTypes = ['Point', 'LineString', 'Polygon', 'MultiPoint', 
+                           'MultiLineString', 'MultiPolygon', 'GeometryCollection'];
+        
+        if (!validTypes.includes(geometry.type)) {
+            throw new Error(`Invalid geometry type: ${geometry.type}`);
+        }
+        
+        if (geometry.type !== 'GeometryCollection' && !geometry.coordinates) {
+            throw new Error('GeoJSON must have "coordinates" field');
+        }
+        
+        // Show success
+        statusDiv.className = 'validation-status validation-success';
+        statusDiv.innerHTML = `<i data-feather="check-circle" style="width: 16px; height: 16px;"></i> Valid ${geometry.type} geometry`;
+        statusDiv.style.display = 'block';
+        feather.replace();
+        
+    } catch (error) {
+        // Show error
+        statusDiv.className = 'validation-status validation-error';
+        statusDiv.innerHTML = `<i data-feather="x-circle" style="width: 16px; height: 16px;"></i> ${error.message}`;
+        statusDiv.style.display = 'block';
+        feather.replace();
+    }
+}
+
+function formatGeoJSON() {
+    const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+    const geojsonText = geojsonTextarea.value.trim();
+    
+    if (!geojsonText) return;
+    
+    try {
+        const geometry = JSON.parse(geojsonText);
+        geojsonTextarea.value = JSON.stringify(geometry, null, 2);
+        validateGeoJSON();
+    } catch (error) {
+        alert('Invalid JSON format. Cannot format.');
+    }
+}
+
+function initializeFormValidation() {
+    // Form validation
+    const form = document.getElementById('geometry-form');
+    form.addEventListener('submit', function(event) {
+        // Copy GeoJSON from textarea to hidden field
+        const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+        const geojsonHidden = document.getElementById('{{ form.geojson.id_for_label }}');
+        geojsonHidden.value = geojsonTextarea.value;
+        
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+    
+    // Real-time GeoJSON validation
+    const geojsonTextarea = document.getElementById('{{ form.geojson_text.id_for_label }}');
+    geojsonTextarea.addEventListener('blur', validateGeoJSON);
+    
+    // Initial validation
+    validateGeoJSON();
+}
+</script>
+{% endblock %}

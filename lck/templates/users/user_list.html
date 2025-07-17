@@ -1,0 +1,217 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Users Management - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Users Management</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item active">Users</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'user_create' %}" class="btn btn-sm btn-primary">
+                        <i data-feather="user-plus" class="align-self-center icon-xs mr-1"></i>
+                        Add User
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">System Users</h4>
+                        <p class="text-muted mb-0">Manage and monitor all system users and their access levels.</p>
+                    </div><!--end col-->
+                    <div class="col-auto"> 
+                        <div class="d-flex">
+                            <a href="{% url 'user_create' %}" class="btn btn-primary btn-sm">
+                                <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
+                                New User
+                            </a>
+                        </div>               
+                    </div><!--end col-->
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0 table-centered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="border-top-0">User</th>
+                                <th class="border-top-0">Email</th>
+                                <th class="border-top-0">Role</th>
+                                <th class="border-top-0">Status</th>
+                                <th class="border-top-0">Client</th>
+                                <th class="border-top-0 text-right">Actions</th>
+                            </tr><!--end tr-->
+                        </thead>
+                        <tbody>
+                            {% for user_item in users %}
+                            <tr>
+                                <td>
+                                    <div class="media">
+                                        <img src="{% static 'images/users/user-5.jpg' %}" alt="" class="rounded-circle thumb-xs mr-2">
+                                        <div class="media-body align-self-center">
+                                            <h6 class="m-0 font-weight-semibold">{{ user_item.username }}</h6>
+                                            <small class="text-muted">{{ user_item.first_name }} {{ user_item.last_name }}</small>
+                                        </div><!--end media body-->
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ user_item.email|default:'-' }}</span>
+                                </td>
+                                <td>
+                                    {% if user_item.role == 'admin' %}
+                                        <span class="badge badge-soft-danger">{{ user_item.get_role_display }}</span>
+                                    {% else %}
+                                        <span class="badge badge-soft-primary">{{ user_item.get_role_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user_item.is_active %}
+                                        <span class="badge badge-soft-success">Active</span>
+                                    {% else %}
+                                        <span class="badge badge-soft-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user_item.cliente_relacionado %}
+                                        <span class="text-success">
+                                            <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                            Assigned
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">
+                                            <i data-feather="minus-circle" class="icon-xs mr-1"></i>
+                                            Not Assigned
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    <div class="dropdown d-inline-block">
+                                        <a class="dropdown-toggle arrow-none" id="dLabel{{ user_item.id }}" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                            <i class="las la-ellipsis-v font-20 text-muted"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dLabel{{ user_item.id }}">
+                                            <a class="dropdown-item" href="{% url 'user_edit' user_item.id %}">
+                                                <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                                                Edit User
+                                            </a>
+                                            {% if user_item.is_active %}
+                                                <a class="dropdown-item text-warning" href="#" onclick="alert('Deactivate feature coming soon!')">
+                                                    <i data-feather="user-x" class="icon-xs mr-1"></i>
+                                                    Deactivate
+                                                </a>
+                                            {% else %}
+                                                <a class="dropdown-item text-success" href="#" onclick="alert('Activate feature coming soon!')">
+                                                    <i data-feather="user-check" class="icon-xs mr-1"></i>
+                                                    Activate
+                                                </a>
+                                            {% endif %}
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="#" onclick="alert('Delete feature requires confirmation dialog!')">
+                                                <i data-feather="trash-2" class="icon-xs mr-1"></i>
+                                                Delete
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-center">
+                                        <i data-feather="users" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                                        <h5 class="text-muted">No users found</h5>
+                                        <p class="text-muted">Start by creating your first user.</p>
+                                        <a href="{% url 'user_create' %}" class="btn btn-primary">
+                                            <i data-feather="plus" class="mr-1"></i>
+                                            Create First User
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table><!--end /table-->
+                </div><!--end /tableresponsive-->
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-primary mb-2">
+                    <i data-feather="users" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h4 class="mb-1">{{ users|length }}</h4>
+                <p class="text-muted mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-success mb-2">
+                    <i data-feather="user-check" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h4 class="mb-1">
+                    {% for user_item in users %}
+                        {% if user_item.is_active %}{{ forloop.counter0|add:1 }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </h4>
+                <p class="text-muted mb-0">Active Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-danger mb-2">
+                    <i data-feather="shield" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h4 class="mb-1">
+                    {% for user_item in users %}
+                        {% if user_item.role == 'admin' %}{{ forloop.counter0|add:1 }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </h4>
+                <p class="text-muted mb-0">Administrators</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-info mb-2">
+                    <i data-feather="user" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h4 class="mb-1">
+                    {% for user_item in users %}
+                        {% if user_item.role == 'cliente' %}{{ forloop.counter0|add:1 }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </h4>
+                <p class="text-muted mb-0">Clients</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

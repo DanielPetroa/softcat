@@ -1,0 +1,569 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ geometria.nombre }} - Geometry Details - LCK Insurance System{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #geometry-map {
+        height: 500px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+    }
+    .geometry-info-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .coordinates-display {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Geometry Details</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'geometry_list' %}">Geometries</a></li>
+                        <li class="breadcrumb-item active">{{ geometria.nombre }}</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <div class="d-flex">
+                        <a href="{% url 'geometry_edit' geometria.pk %}" class="btn btn-sm btn-primary mr-2">
+                            <i data-feather="edit-2" class="align-self-center icon-xs mr-1"></i>
+                            Edit Geometry
+                        </a>
+                        <a href="{% url 'geometry_list' %}" class="btn btn-sm btn-outline-secondary">
+                            <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                            Back to List
+                        </a>
+                    </div>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<!-- Geometry Header Card -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-white bg-opacity-20 rounded p-3">
+                            {% if geometria.geometry_type == 'Point' %}
+                                <i data-feather="map-pin" class="text-white" style="width: 48px; height: 48px;"></i>
+                            {% elif geometria.geometry_type == 'Polygon' %}
+                                <i data-feather="hexagon" class="text-white" style="width: 48px; height: 48px;"></i>
+                            {% elif geometria.geometry_type == 'LineString' %}
+                                <i data-feather="trending-up" class="text-white" style="width: 48px; height: 48px;"></i>
+                            {% else %}
+                                <i data-feather="map" class="text-white" style="width: 48px; height: 48px;"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3 class="text-white mb-1">{{ geometria.nombre }}</h3>
+                        <p class="mb-1 text-white-50">{{ geometria.geometry_type }} • {{ geometria.id_cliente.nombre }}</p>
+                        <div class="d-flex align-items-center">
+                            <span class="badge badge-light mr-2">ID: {{ geometria.id_geometria }}</span>
+                            <span class="badge badge-light mr-2">
+                                <i data-feather="user" class="icon-xs mr-1"></i>
+                                {{ geometria.id_cliente.sector }}
+                            </span>
+                            {% if geometria.monitoreo_activo %}
+                                <span class="badge badge-success">
+                                    <i data-feather="activity" class="icon-xs mr-1"></i>
+                                    Monitoring Active
+                                </span>
+                            {% else %}
+                                <span class="badge badge-secondary">
+                                    <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                    Monitoring Inactive
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="dropdown">
+                            <button class="btn btn-light dropdown-toggle" type="button" data-toggle="dropdown">
+                                <i data-feather="more-horizontal" class="mr-1"></i>
+                                Actions
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{% url 'geometry_edit' geometria.pk %}">
+                                    <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                                    Edit Geometry
+                                </a>
+                                {% if geometria.monitoreo_activo %}
+                                    <a class="dropdown-item text-warning" href="{% url 'geometry_toggle_monitoring' geometria.pk %}">
+                                        <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                        Disable Monitoring
+                                    </a>
+                                {% else %}
+                                    <a class="dropdown-item text-success" href="{% url 'geometry_toggle_monitoring' geometria.pk %}">
+                                        <i data-feather="play-circle" class="icon-xs mr-1"></i>
+                                        Enable Monitoring
+                                    </a>
+                                {% endif %}
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" onclick="exportGeometry()">
+                                    <i data-feather="download" class="icon-xs mr-1"></i>
+                                    Export GeoJSON
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="alert('Print feature coming soon!')">
+                                    <i data-feather="printer" class="icon-xs mr-1"></i>
+                                    Print Details
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="{% url 'geometry_delete' geometria.pk %}">
+                                    <i data-feather="trash-2" class="icon-xs mr-1"></i>
+                                    Delete Geometry
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">
+                            <i data-feather="globe" class="icon-xs mr-2"></i>
+                            Interactive Map
+                        </h4>
+                        <p class="text-muted mb-0">Geographic visualization of the geometry area.</p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="centerMap()">
+                                <i data-feather="target" class="icon-xs mr-1"></i>
+                                Center View
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleFullscreen()">
+                                <i data-feather="maximize" class="icon-xs mr-1"></i>
+                                Fullscreen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0" style="position: relative;">
+                <div id="geometry-map"></div>
+                <div class="map-controls">
+                    <div class="btn-group-vertical" role="group">
+                        <button type="button" class="btn btn-light btn-sm" onclick="map.zoomIn()" title="Zoom In">
+                            <i data-feather="plus"></i>
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm" onclick="map.zoomOut()" title="Zoom Out">
+                            <i data-feather="minus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Geometry Information -->
+<div class="row">
+    <!-- Basic Information -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="info" class="icon-xs mr-2"></i>
+                    Geometry Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="font-weight-semibold text-muted" style="width: 40%;">Name:</td>
+                                <td>{{ geometria.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Geometry ID:</td>
+                                <td><span class="badge badge-soft-primary">{{ geometria.id_geometria }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Type:</td>
+                                <td><span class="badge badge-soft-info">{{ geometria.geometry_type }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Coordinates:</td>
+                                <td>{{ geometria.coordinates_summary }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Monitoring:</td>
+                                <td>
+                                    {% if geometria.monitoreo_activo %}
+                                        <span class="badge badge-soft-success">
+                                            <i data-feather="activity" class="icon-xs mr-1"></i>
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-soft-secondary">
+                                            <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Created:</td>
+                                <td>{{ geometria.creado_en|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% if geometria.bounds %}
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Center Point:</td>
+                                <td>
+                                    <small class="text-muted">
+                                        Lat: {{ geometria.bounds.center_lat|floatformat:4 }}, 
+                                        Lng: {{ geometria.bounds.center_lng|floatformat:4 }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Information -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="user" class="icon-xs mr-2"></i>
+                    Associated Client
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="mr-3">
+                        <img src="{% static 'images/users/user-5.jpg' %}" alt="" class="rounded-circle" width="48" height="48">
+                    </div>
+                    <div>
+                        <h6 class="mb-1">
+                            <a href="{% url 'client_detail' geometria.id_cliente.pk %}" class="text-primary">{{ geometria.id_cliente.nombre }}</a>
+                        </h6>
+                        <small class="text-muted">{{ geometria.id_cliente.tipo }} • {{ geometria.id_cliente.sector }}</small>
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <a href="{% url 'client_detail' geometria.id_cliente.pk %}" class="btn btn-outline-primary btn-sm btn-block">
+                            <i data-feather="eye" class="icon-xs mr-1"></i>
+                            View Client
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="mailto:{{ geometria.id_cliente.correo_principal }}" class="btn btn-outline-secondary btn-sm btn-block">
+                            <i data-feather="mail" class="icon-xs mr-1"></i>
+                            Send Email
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <div class="table-responsive">
+                    <table class="table table-borderless table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted">Country:</td>
+                                <td>{{ geometria.id_cliente.pais }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Contact:</td>
+                                <td>{{ geometria.id_cliente.contacto_principal }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Executive:</td>
+                                <td>{{ geometria.id_cliente.ejecutivo_lockton }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GeoJSON Data -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">
+                            <i data-feather="code" class="icon-xs mr-2"></i>
+                            GeoJSON Data
+                        </h4>
+                        <p class="text-muted mb-0">Raw geometry data in GeoJSON format.</p>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard()">
+                            <i data-feather="copy" class="icon-xs mr-1"></i>
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="coordinates-display" id="geojson-display">{{ geometria.geojson_string }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Related Data (Future modules) -->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="activity" class="icon-xs mr-2"></i>
+                    Events
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <i data-feather="calendar" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                <h6 class="text-muted">No events recorded</h6>
+                <p class="text-muted">Event monitoring will be available soon.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="bar-chart" class="icon-xs mr-2"></i>
+                    Risk Models
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <i data-feather="trending-up" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                <h6 class="text-muted">No risk models</h6>
+                <p class="text-muted">Risk modeling will be available soon.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="dollar-sign" class="icon-xs mr-2"></i>
+                    Payout Options
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <i data-feather="credit-card" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                <h6 class="text-muted">No payout options</h6>
+                <p class="text-muted">Payout configuration will be available soon.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Map data from Django
+const mapData = {{ map_data|safe }};
+let map;
+let geometryLayer;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+});
+
+function initializeMap() {
+    // Default map center (will be overridden if bounds exist)
+    let center = [0, 0];
+    let zoom = 2;
+    
+    // If we have bounds, use them to center the map
+    if (mapData.bounds) {
+        center = [mapData.bounds.center_lat, mapData.bounds.center_lng];
+        zoom = 10;
+    }
+    
+    // Initialize the map
+    map = L.map('geometry-map').setView(center, zoom);
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Add the geometry to the map
+    if (mapData.geometry) {
+        addGeometryToMap(mapData.geometry);
+    }
+}
+
+function addGeometryToMap(geometry) {
+    try {
+        // Create GeoJSON layer
+        geometryLayer = L.geoJSON(geometry, {
+            style: function(feature) {
+                return {
+                    color: '#007bff',
+                    weight: 3,
+                    opacity: 0.8,
+                    fillColor: '#007bff',
+                    fillOpacity: 0.2
+                };
+            },
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, {
+                    radius: 8,
+                    fillColor: '#007bff',
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+            }
+        }).addTo(map);
+        
+        // Add popup with geometry info
+        geometryLayer.bindPopup(`
+            <div class="geometry-info-card">
+                <h6><strong>${mapData.name}</strong></h6>
+                <p><small><strong>Client:</strong> ${mapData.client}</small></p>
+                <p><small><strong>Type:</strong> ${geometry.type}</small></p>
+            </div>
+        `);
+        
+        // Fit map to geometry bounds
+        if (geometryLayer.getBounds && geometryLayer.getBounds().isValid()) {
+            map.fitBounds(geometryLayer.getBounds(), {padding: [20, 20]});
+        }
+    } catch (error) {
+        console.error('Error adding geometry to map:', error);
+        alert('Error displaying geometry on map. Please check the GeoJSON data.');
+    }
+}
+
+function centerMap() {
+    if (geometryLayer && geometryLayer.getBounds && geometryLayer.getBounds().isValid()) {
+        map.fitBounds(geometryLayer.getBounds(), {padding: [20, 20]});
+    } else if (mapData.bounds) {
+        map.setView([mapData.bounds.center_lat, mapData.bounds.center_lng], 10);
+    }
+}
+
+function toggleFullscreen() {
+    const mapElement = document.getElementById('geometry-map');
+    if (!document.fullscreenElement) {
+        mapElement.requestFullscreen().then(() => {
+            setTimeout(() => {
+                map.invalidateSize();
+                centerMap();
+            }, 100);
+        });
+    } else {
+        document.exitFullscreen().then(() => {
+            setTimeout(() => {
+                map.invalidateSize();
+                centerMap();
+            }, 100);
+        });
+    }
+}
+
+function copyToClipboard() {
+    const geojsonText = document.getElementById('geojson-display').textContent;
+    navigator.clipboard.writeText(geojsonText).then(() => {
+        // Show temporary success message
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i data-feather="check" class="icon-xs mr-1"></i>Copied!';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+            feather.replace();
+        }, 2000);
+    }).catch(() => {
+        alert('Failed to copy to clipboard');
+    });
+}
+
+function exportGeometry() {
+    const geometry = mapData.geometry;
+    const blob = new Blob([JSON.stringify(geometry, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `geometry_${mapData.name.replace(/\s+/g, '_')}.geojson`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Handle fullscreen changes
+document.addEventListener('fullscreenchange', function() {
+    if (map) {
+        setTimeout(() => {
+            map.invalidateSize();
+            centerMap();
+        }, 100);
+    }
+});
+</script>
+{% endblock %}

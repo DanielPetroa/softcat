@@ -1,0 +1,583 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Geometries Map View - LCK Insurance System{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<style>
+    #map-container {
+        height: calc(100vh - 200px);
+        min-height: 600px;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .map-sidebar {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 300px;
+        max-height: calc(100% - 20px);
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        overflow-y: auto;
+    }
+    
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+    }
+    
+    .geometry-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .geometry-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .geometry-item:last-child {
+        border-bottom: none;
+    }
+    
+    .geometry-item.active {
+        background-color: #e3f2fd;
+        border-left: 3px solid #2196f3;
+    }
+    
+    .geometry-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .geometry-icon.point { background-color: #ff5722; }
+    .geometry-icon.polygon { background-color: #4caf50; }
+    .geometry-icon.linestring { background-color: #2196f3; }
+    .geometry-icon.other { background-color: #9e9e9e; }
+    
+    .monitoring-status {
+        font-size: 8px;
+        padding: 2px 4px;
+        border-radius: 2px;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+    
+    .monitoring-active {
+        background-color: #c8e6c9;
+        color: #2e7d32;
+    }
+    
+    .monitoring-inactive {
+        background-color: #ffcdd2;
+        color: #c62828;
+    }
+    
+    .fullscreen-btn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1000;
+    }
+    
+    .legend {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+    }
+    
+    .search-box {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .stats-header {
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Geometries Map View</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'geometry_list' %}">Geometries</a></li>
+                        <li class="breadcrumb-item active">Map View</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <div class="d-flex">
+                        <a href="{% url 'geometry_list' %}" class="btn btn-sm btn-outline-secondary mr-2">
+                            <i data-feather="list" class="align-self-center icon-xs mr-1"></i>
+                            List View
+                        </a>
+                        <a href="{% url 'geometry_create' %}" class="btn btn-sm btn-primary">
+                            <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
+                            Add Geometry
+                        </a>
+                    </div>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Map Container -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="map-container">
+                    <!-- Map Controls -->
+                    <div class="map-controls">
+                        <div class="btn-group-vertical" role="group">
+                            <button type="button" class="btn btn-light btn-sm" onclick="fitAllGeometries()" title="Fit All">
+                                <i data-feather="maximize-2"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm" onclick="toggleClustering()" title="Toggle Clustering" id="cluster-btn">
+                                <i data-feather="layers"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm" onclick="toggleActiveOnly()" title="Active Only" id="active-btn">
+                                <i data-feather="eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Map Sidebar -->
+                    <div class="map-sidebar" id="map-sidebar">
+                        <!-- Stats Header -->
+                        <div class="stats-header">
+                            <h6 class="mb-1 text-white">Geometries Overview</h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="text-white-50 small">Total</div>
+                                    <div class="font-weight-bold" id="total-count">{{ total_geometrias }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-white-50 small">Active</div>
+                                    <div class="font-weight-bold text-success" id="active-count">0</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-white-50 small">Visible</div>
+                                    <div class="font-weight-bold" id="visible-count">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <input type="text" class="form-control form-control-sm" placeholder="Search geometries..." id="search-input">
+                        </div>
+                        
+                        <!-- Geometries List -->
+                        <div id="geometries-list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Map Legend -->
+                    <div class="legend">
+                        <div class="mb-1"><strong>Legend</strong></div>
+                        <div class="d-flex align-items-center mb-1">
+                            <div class="geometry-icon point mr-2"></div>
+                            <small>Points</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-1">
+                            <div class="geometry-icon polygon mr-2"></div>
+                            <small>Polygons</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="geometry-icon linestring mr-2"></div>
+                            <small>Lines</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Fullscreen Button -->
+                    <div class="fullscreen-btn">
+                        <button type="button" class="btn btn-light btn-sm" onclick="toggleFullscreen()" title="Fullscreen">
+                            <i data-feather="maximize" id="fullscreen-icon"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+// Data from Django
+const geometriesData = {{ geometries_data|safe }};
+
+// Map variables
+let map;
+let geometryLayers = {};
+let markerClusterGroup;
+let clusteringEnabled = true;
+let showActiveOnly = false;
+let currentSearchTerm = '';
+let selectedGeometry = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    loadGeometries();
+    updateStats();
+    
+    // Search functionality
+    document.getElementById('search-input').addEventListener('input', function(e) {
+        currentSearchTerm = e.target.value.toLowerCase();
+        filterGeometries();
+    });
+});
+
+function initializeMap() {
+    // Initialize the map (centered on Colombia)
+    map = L.map('map-container').setView([4.6097, -74.0817], 6);
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Initialize marker cluster group
+    markerClusterGroup = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 50
+    });
+    map.addLayer(markerClusterGroup);
+}
+
+function loadGeometries() {
+    const geometriesList = document.getElementById('geometries-list');
+    geometriesList.innerHTML = '';
+    
+    geometriesData.forEach(function(geomData, index) {
+        // Create map layer
+        createGeometryLayer(geomData);
+        
+        // Create sidebar item
+        createSidebarItem(geomData, index);
+    });
+    
+    // Fit map to show all geometries
+    if (Object.keys(geometryLayers).length > 0) {
+        fitAllGeometries();
+    }
+}
+
+function createGeometryLayer(geomData) {
+    try {
+        const layer = L.geoJSON(geomData.geometry, {
+            style: function(feature) {
+                const color = geomData.monitoring ? '#4caf50' : '#f44336';
+                return {
+                    color: color,
+                    weight: 3,
+                    opacity: 0.8,
+                    fillColor: color,
+                    fillOpacity: 0.2
+                };
+            },
+            pointToLayer: function(feature, latlng) {
+                const color = geomData.monitoring ? '#4caf50' : '#f44336';
+                return L.circleMarker(latlng, {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+            }
+        });
+        
+        // Add popup
+        const popupContent = `
+            <div style="min-width: 200px;">
+                <h6><strong>${geomData.name}</strong></h6>
+                <p class="mb-1"><small><strong>Client:</strong> ${geomData.client}</small></p>
+                <p class="mb-1"><small><strong>Type:</strong> ${geomData.geometry.type}</small></p>
+                <p class="mb-2"><small><strong>Monitoring:</strong> 
+                    <span class="badge badge-${geomData.monitoring ? 'success' : 'secondary'} badge-sm">
+                        ${geomData.monitoring ? 'Active' : 'Inactive'}
+                    </span>
+                </small></p>
+                <div class="text-center">
+                    <a href="/geometries/${geomData.id}/" class="btn btn-primary btn-sm">
+                        <i data-feather="eye" style="width: 12px; height: 12px;"></i>
+                        View Details
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        layer.bindPopup(popupContent);
+        
+        // Store layer
+        geometryLayers[geomData.id] = {
+            layer: layer,
+            data: geomData,
+            visible: true
+        };
+        
+        // Add to cluster group
+        markerClusterGroup.addLayer(layer);
+        
+    } catch (error) {
+        console.error('Error creating layer for geometry:', geomData.id, error);
+    }
+}
+
+function createSidebarItem(geomData, index) {
+    const geometriesList = document.getElementById('geometries-list');
+    
+    const geometryType = geomData.geometry.type.toLowerCase();
+    const iconClass = geometryType === 'point' ? 'point' : 
+                     geometryType === 'polygon' ? 'polygon' :
+                     geometryType.includes('line') ? 'linestring' : 'other';
+    
+    const item = document.createElement('div');
+    item.className = 'geometry-item';
+    item.dataset.geometryId = geomData.id;
+    
+    item.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="geometry-icon ${iconClass}"></div>
+            <div class="flex-grow-1">
+                <div class="font-weight-semibold" style="font-size: 13px;">${geomData.name}</div>
+                <div class="text-muted" style="font-size: 11px;">${geomData.client}</div>
+            </div>
+            <div class="text-right">
+                <div class="monitoring-status ${geomData.monitoring ? 'monitoring-active' : 'monitoring-inactive'}">
+                    ${geomData.monitoring ? 'ON' : 'OFF'}
+                </div>
+                <div class="text-muted" style="font-size: 10px;">${geomData.geometry.type}</div>
+            </div>
+        </div>
+    `;
+    
+    // Click event
+    item.addEventListener('click', function() {
+        selectGeometry(geomData.id);
+    });
+    
+    geometriesList.appendChild(item);
+}
+
+function selectGeometry(geometryId) {
+    // Remove previous selection
+    document.querySelectorAll('.geometry-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Add selection to clicked item
+    const item = document.querySelector(`[data-geometry-id="${geometryId}"]`);
+    if (item) {
+        item.classList.add('active');
+    }
+    
+    // Zoom to geometry
+    const geometryLayer = geometryLayers[geometryId];
+    if (geometryLayer && geometryLayer.layer) {
+        const layer = geometryLayer.layer;
+        
+        // Fit bounds or center on point
+        if (layer.getBounds && layer.getBounds().isValid()) {
+            map.fitBounds(layer.getBounds(), {padding: [20, 20]});
+        } else if (layer.getLatLng) {
+            map.setView(layer.getLatLng(), 15);
+        }
+        
+        // Open popup
+        layer.openPopup();
+    }
+    
+    selectedGeometry = geometryId;
+}
+
+function fitAllGeometries() {
+    if (markerClusterGroup.getLayers().length > 0) {
+        map.fitBounds(markerClusterGroup.getBounds(), {padding: [20, 20]});
+    }
+}
+
+function toggleClustering() {
+    const button = document.getElementById('cluster-btn');
+    
+    if (clusteringEnabled) {
+        // Disable clustering
+        map.removeLayer(markerClusterGroup);
+        Object.values(geometryLayers).forEach(geomLayer => {
+            if (geomLayer.visible) {
+                map.addLayer(geomLayer.layer);
+            }
+        });
+        button.classList.add('btn-primary');
+        button.classList.remove('btn-light');
+        clusteringEnabled = false;
+    } else {
+        // Enable clustering
+        Object.values(geometryLayers).forEach(geomLayer => {
+            map.removeLayer(geomLayer.layer);
+        });
+        map.addLayer(markerClusterGroup);
+        button.classList.add('btn-light');
+        button.classList.remove('btn-primary');
+        clusteringEnabled = true;
+    }
+}
+
+function toggleActiveOnly() {
+    const button = document.getElementById('active-btn');
+    showActiveOnly = !showActiveOnly;
+    
+    if (showActiveOnly) {
+        button.classList.add('btn-success');
+        button.classList.remove('btn-light');
+    } else {
+        button.classList.add('btn-light');
+        button.classList.remove('btn-success');
+    }
+    
+    filterGeometries();
+}
+
+function filterGeometries() {
+    let visibleCount = 0;
+    
+    Object.values(geometryLayers).forEach(geomLayer => {
+        const geomData = geomLayer.data;
+        let shouldShow = true;
+        
+        // Filter by monitoring status
+        if (showActiveOnly && !geomData.monitoring) {
+            shouldShow = false;
+        }
+        
+        // Filter by search term
+        if (currentSearchTerm && shouldShow) {
+            const searchableText = `${geomData.name} ${geomData.client}`.toLowerCase();
+            if (!searchableText.includes(currentSearchTerm)) {
+                shouldShow = false;
+            }
+        }
+        
+        // Update layer visibility
+        if (shouldShow !== geomLayer.visible) {
+            geomLayer.visible = shouldShow;
+            
+            if (clusteringEnabled) {
+                if (shouldShow) {
+                    markerClusterGroup.addLayer(geomLayer.layer);
+                } else {
+                    markerClusterGroup.removeLayer(geomLayer.layer);
+                }
+            } else {
+                if (shouldShow) {
+                    map.addLayer(geomLayer.layer);
+                } else {
+                    map.removeLayer(geomLayer.layer);
+                }
+            }
+        }
+        
+        if (shouldShow) visibleCount++;
+        
+        // Update sidebar item visibility
+        const sidebarItem = document.querySelector(`[data-geometry-id="${geomData.id}"]`);
+        if (sidebarItem) {
+            sidebarItem.style.display = shouldShow ? 'block' : 'none';
+        }
+    });
+    
+    // Update visible count
+    document.getElementById('visible-count').textContent = visibleCount;
+}
+
+function updateStats() {
+    const activeCount = geometriesData.filter(g => g.monitoring).length;
+    document.getElementById('active-count').textContent = activeCount;
+    document.getElementById('visible-count').textContent = geometriesData.length;
+}
+
+function toggleFullscreen() {
+    const mapContainer = document.getElementById('map-container');
+    const icon = document.getElementById('fullscreen-icon');
+    
+    if (!document.fullscreenElement) {
+        mapContainer.requestFullscreen().then(() => {
+            icon.setAttribute('data-feather', 'minimize');
+            feather.replace();
+            setTimeout(() => {
+                map.invalidateSize();
+                fitAllGeometries();
+            }, 100);
+        });
+    } else {
+        document.exitFullscreen().then(() => {
+            icon.setAttribute('data-feather', 'maximize');
+            feather.replace();
+            setTimeout(() => {
+                map.invalidateSize();
+                fitAllGeometries();
+            }, 100);
+        });
+    }
+}
+
+// Handle fullscreen changes
+document.addEventListener('fullscreenchange', function() {
+    if (map) {
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    }
+});
+
+// Initialize feather icons for popups
+map.on('popupopen', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

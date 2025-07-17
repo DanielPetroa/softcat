@@ -1,0 +1,396 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Geometries Management - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Geometries Management</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item active">Geometries</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <div class="d-flex">
+                        <a href="{% url 'geometry_map_view' %}" class="btn btn-sm btn-outline-info mr-2">
+                            <i data-feather="globe" class="align-self-center icon-xs mr-1"></i>
+                            Map View
+                        </a>
+                        <a href="{% url 'geometry_create' %}" class="btn btn-sm btn-primary">
+                            <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
+                            Add Geometry
+                        </a>
+                    </div>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    <div class="col">
+                        <p class="text-dark mb-1 font-weight-semibold">Total Geometries</p>
+                        <h3 class="my-2">{{ total_geometrias }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-primary"><i class="mdi mdi-trending-up"></i>All Shapes</span> 
+                            In System
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="map" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div>
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col--> 
+    
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">                                                
+                    <div class="col">
+                        <p class="text-dark mb-1 font-weight-semibold">Active Monitoring</p>
+                        <h3 class="my-2">{{ geometrias_activas }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-success"><i class="mdi mdi-trending-up"></i>Monitored</span> 
+                            Real-time Tracking
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="activity" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div> 
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col--> 
+    
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">                                                
+                    <div class="col">
+                        <p class="text-dark mb-1 font-weight-semibold">Inactive</p>
+                        <h3 class="my-2">{{ geometrias_inactivas }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-warning"><i class="mdi mdi-trending-down"></i>Dormant</span> 
+                            Not Monitored
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="pause-circle" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div> 
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col--> 
+    
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    <div class="col">  
+                        <p class="text-dark mb-1 font-weight-semibold">Clients with Geometries</p>                                         
+                        <h3 class="my-2">{{ clientes_con_geometrias }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-info"><i class="mdi mdi-account-multiple"></i>Coverage</span> 
+                            Geographic Coverage
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="users" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div> 
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col-->                               
+</div><!--end row-->
+
+<!-- Search and Filters -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">Search & Filters</h4>
+                        <p class="text-muted mb-0">Find geometries quickly using the filters below.</p>
+                    </div><!--end col-->
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                <form method="get" class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-label">Search</label>
+                            <div class="input-group">
+                                <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Name, client...">
+                                <div class="input-group-append">
+                                    <span class="input-group-text"><i data-feather="search"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label">Client</label>
+                            <select name="cliente" class="form-control">
+                                <option value="">All Clients</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id_cliente }}" {% if cliente.id_cliente|stringformat:"s" == cliente_filter %}selected{% endif %}>{{ cliente.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label">Geometry Type</label>
+                            <select name="tipo" class="form-control">
+                                <option value="">All Types</option>
+                                {% for tipo in tipos_geometria %}
+                                    <option value="{{ tipo }}" {% if tipo == tipo_filter %}selected{% endif %}>{{ tipo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="form-label">Monitoring</label>
+                            <select name="monitoreo" class="form-control">
+                                <option value="">All Status</option>
+                                <option value="true" {% if monitoreo_filter == 'true' %}selected{% endif %}>Active</option>
+                                <option value="false" {% if monitoreo_filter == 'false' %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex">
+                                <button type="submit" class="btn btn-primary mr-2">
+                                    <i data-feather="search" class="icon-xs mr-1"></i>
+                                    Search
+                                </button>
+                                <a href="{% url 'geometry_list' %}" class="btn btn-outline-secondary">
+                                    <i data-feather="x" class="icon-xs mr-1"></i>
+                                    Clear
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div>
+</div>
+
+<!-- Geometries Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">Geometries Directory</h4>
+                        <p class="text-muted mb-0">Complete list of all registered geometries.</p>
+                    </div><!--end col-->
+                    <div class="col-auto"> 
+                        <div class="d-flex">
+                            <a href="{% url 'geometry_create' %}" class="btn btn-primary btn-sm">
+                                <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
+                                New Geometry
+                            </a>
+                        </div>               
+                    </div><!--end col-->
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                {% if geometrias %}
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0 table-centered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="border-top-0">Geometry</th>
+                                <th class="border-top-0">Client</th>
+                                <th class="border-top-0">Type</th>
+                                <th class="border-top-0">Coordinates Info</th>
+                                <th class="border-top-0">Monitoring</th>
+                                <th class="border-top-0">Created</th>
+                                <th class="border-top-0 text-right">Actions</th>
+                            </tr><!--end tr-->
+                        </thead>
+                        <tbody>
+                            {% for geometria in geometrias %}
+                            <tr>
+                                <td>
+                                    <div class="media">
+                                        <div class="mr-3">
+                                            {% if geometria.geometry_type == 'Point' %}
+                                                <i data-feather="map-pin" class="text-primary" style="width: 24px; height: 24px;"></i>
+                                            {% elif geometria.geometry_type == 'Polygon' %}
+                                                <i data-feather="hexagon" class="text-success" style="width: 24px; height: 24px;"></i>
+                                            {% elif geometria.geometry_type == 'LineString' %}
+                                                <i data-feather="trending-up" class="text-info" style="width: 24px; height: 24px;"></i>
+                                            {% else %}
+                                                <i data-feather="map" class="text-muted" style="width: 24px; height: 24px;"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="media-body align-self-center">
+                                            <h6 class="m-0 font-weight-semibold">
+                                                <a href="{% url 'geometry_detail' geometria.pk %}" class="text-dark">{{ geometria.nombre }}</a>
+                                            </h6>
+                                            <small class="text-muted">ID: {{ geometria.id_geometria }}</small>
+                                        </div><!--end media body-->
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <h6 class="mb-1 font-13">{{ geometria.id_cliente.nombre }}</h6>
+                                        <small class="text-muted">{{ geometria.id_cliente.sector }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-soft-primary">{{ geometria.geometry_type }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ geometria.coordinates_summary }}</small>
+                                </td>
+                                <td>
+                                    {% if geometria.monitoreo_activo %}
+                                        <span class="badge badge-soft-success">
+                                            <i data-feather="activity" class="icon-xs mr-1"></i>
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-soft-secondary">
+                                            <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ geometria.creado_en|date:"M d, Y" }}</span>
+                                </td>
+                                <td class="text-right">
+                                    <div class="dropdown d-inline-block">
+                                        <a class="dropdown-toggle arrow-none" id="dLabel{{ geometria.id_geometria }}" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                            <i class="las la-ellipsis-v font-20 text-muted"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dLabel{{ geometria.id_geometria }}">
+                                            <a class="dropdown-item" href="{% url 'geometry_detail' geometria.pk %}">
+                                                <i data-feather="eye" class="icon-xs mr-1"></i>
+                                                View Details
+                                            </a>
+                                            <a class="dropdown-item" href="{% url 'geometry_edit' geometria.pk %}">
+                                                <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                                                Edit Geometry
+                                            </a>
+                                            {% if geometria.monitoreo_activo %}
+                                                <a class="dropdown-item text-warning" href="{% url 'geometry_toggle_monitoring' geometria.pk %}">
+                                                    <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                                    Disable Monitoring
+                                                </a>
+                                            {% else %}
+                                                <a class="dropdown-item text-success" href="{% url 'geometry_toggle_monitoring' geometria.pk %}">
+                                                    <i data-feather="play-circle" class="icon-xs mr-1"></i>
+                                                    Enable Monitoring
+                                                </a>
+                                            {% endif %}
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="{% url 'geometry_delete' geometria.pk %}">
+                                                <i data-feather="trash-2" class="icon-xs mr-1"></i>
+                                                Delete
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table><!--end /table-->
+                </div><!--end /tableresponsive-->
+
+                <!-- Pagination -->
+                {% if geometrias.has_other_pages %}
+                <div class="row mt-3">
+                    <div class="col-sm-12 col-md-5">
+                        <div class="dataTables_info">
+                            Showing {{ geometrias.start_index }} to {{ geometrias.end_index }} of {{ geometrias.paginator.count }} geometries
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-7">
+                        <div class="dataTables_paginate paging_simple_numbers float-right">
+                            <ul class="pagination">
+                                {% if geometrias.has_previous %}
+                                    <li class="paginate_button page-item previous">
+                                        <a href="?page={{ geometrias.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if cliente_filter %}&cliente={{ cliente_filter }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if monitoreo_filter %}&monitoreo={{ monitoreo_filter }}{% endif %}" class="page-link">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in geometrias.paginator.page_range %}
+                                    {% if geometrias.number == num %}
+                                        <li class="paginate_button page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > geometrias.number|add:'-3' and num < geometrias.number|add:'3' %}
+                                        <li class="paginate_button page-item">
+                                            <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if cliente_filter %}&cliente={{ cliente_filter }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if monitoreo_filter %}&monitoreo={{ monitoreo_filter }}{% endif %}" class="page-link">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if geometrias.has_next %}
+                                    <li class="paginate_button page-item next">
+                                        <a href="?page={{ geometrias.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if cliente_filter %}&cliente={{ cliente_filter }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if monitoreo_filter %}&monitoreo={{ monitoreo_filter }}{% endif %}" class="page-link">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <i data-feather="map" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                    <h5 class="text-muted">No geometries found</h5>
+                    {% if query or cliente_filter or tipo_filter or monitoreo_filter %}
+                        <p class="text-muted">Try adjusting your search criteria or filters.</p>
+                        <a href="{% url 'geometry_list' %}" class="btn btn-outline-primary">
+                            <i data-feather="x" class="mr-1"></i>
+                            Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">Start by creating your first geometry.</p>
+                        <a href="{% url 'geometry_create' %}" class="btn btn-primary">
+                            <i data-feather="plus" class="mr-1"></i>
+                            Create First Geometry
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+{% endblock %}

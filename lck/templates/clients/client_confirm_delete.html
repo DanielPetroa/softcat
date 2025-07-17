@@ -1,0 +1,217 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Deactivate Client - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Deactivate Client</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'client_list' %}">Clients</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'client_detail' cliente.pk %}">{{ cliente.nombre }}</a></li>
+                        <li class="breadcrumb-item active">Deactivate</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'client_detail' cliente.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                        Back to Client
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Warning Card -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="alert-triangle" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h4 class="card-title mb-0 text-white">Confirm Client Deactivation</h4>
+                        <p class="mb-0 text-white-50">This action will deactivate the client but preserve all data.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Client Information Display -->
+                <div class="alert alert-light border-left-warning">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i data-feather="building" class="text-warning" style="width: 48px; height: 48px;"></i>
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1">{{ cliente.nombre }}</h5>
+                            <p class="mb-1 text-muted">{{ cliente.tipo }} • {{ cliente.sector }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge badge-soft-primary mr-2">ID: {{ cliente.id_cliente }}</span>
+                                <span class="badge badge-soft-info mr-2">{{ cliente.pais }}</span>
+                                <span class="badge badge-soft-success">Currently Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="info" class="icon-xs mr-1 text-primary"></i>
+                            What happens when deactivated:
+                        </h6>
+                        <ul class="list-unstyled text-muted">
+                            <li><i data-feather="check" class="icon-xs mr-1 text-success"></i> Client data is preserved</li>
+                            <li><i data-feather="check" class="icon-xs mr-1 text-success"></i> Historical records remain intact</li>
+                            <li><i data-feather="check" class="icon-xs mr-1 text-success"></i> Can be reactivated anytime</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Hidden from active client lists</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> No new policies can be created</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="user" class="icon-xs mr-1 text-primary"></i>
+                            Client Contact Information:
+                        </h6>
+                        <div class="text-muted">
+                            <p class="mb-1"><strong>Main Contact:</strong> {{ cliente.contacto_principal }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ cliente.correo_principal }}</p>
+                            <p class="mb-1"><strong>Phone:</strong> {{ cliente.celular_principal }}</p>
+                            <p class="mb-1"><strong>Executive:</strong> {{ cliente.ejecutivo_lockton }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="border rounded p-3 bg-light">
+                        <h6 class="mb-3">
+                            <i data-feather="shield" class="icon-xs mr-1 text-warning"></i>
+                            Confirmation Required
+                        </h6>
+                        
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmDeactivation" required>
+                            <label class="custom-control-label" for="confirmDeactivation">
+                                I understand that this client will be deactivated and hidden from active lists
+                            </label>
+                        </div>
+                        
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmNotification" required>
+                            <label class="custom-control-label" for="confirmNotification">
+                                I will notify the assigned Lockton executive ({{ cliente.ejecutivo_lockton }}) about this change
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deactivationReason" class="form-label">
+                                <i data-feather="message-square" class="icon-xs mr-1"></i>
+                                Reason for deactivation (Optional):
+                            </label>
+                            <textarea class="form-control" id="deactivationReason" name="reason" rows="3" 
+                                      placeholder="Provide a reason for deactivating this client..."></textarea>
+                            <small class="form-text text-muted">This information will be logged for audit purposes.</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-warning btn-lg px-5" id="confirmBtn" disabled>
+                                    <i data-feather="user-x" class="align-self-center icon-xs mr-2"></i>
+                                    Deactivate Client
+                                </button>
+                                <a href="{% url 'client_detail' cliente.pk %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                    <i data-feather="x" class="align-self-center icon-xs mr-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Additional Information Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-light-alt">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="help-circle" class="text-info" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Need Help?</h6>
+                        <p class="mb-0 text-muted">
+                            If you need to permanently delete this client or have questions about deactivation, 
+                            please contact your system administrator or use the Django admin interface.
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <a href="/admin/" class="btn btn-outline-info btn-sm" target="_blank">
+                            <i data-feather="external-link" class="icon-xs mr-1"></i>
+                            Django Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmDeactivation = document.getElementById('confirmDeactivation');
+    const confirmNotification = document.getElementById('confirmNotification');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    function updateButtonState() {
+        if (confirmDeactivation.checked && confirmNotification.checked) {
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('btn-secondary');
+            confirmBtn.classList.add('btn-warning');
+        } else {
+            confirmBtn.disabled = true;
+            confirmBtn.classList.remove('btn-warning');
+            confirmBtn.classList.add('btn-secondary');
+        }
+    }
+
+    confirmDeactivation.addEventListener('change', updateButtonState);
+    confirmNotification.addEventListener('change', updateButtonState);
+
+    // Initialize button state
+    updateButtonState();
+
+    // Form submission confirmation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to deactivate this client? This action can be reversed later.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

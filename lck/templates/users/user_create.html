@@ -1,0 +1,276 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Create User - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Create New User</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+                        <li class="breadcrumb-item active">Create User</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'user_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                        Back to Users
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">
+                            <i data-feather="user-plus" class="align-self-center icon-xs mr-2"></i>
+                            User Information
+                        </h4>
+                        <p class="text-muted mb-0">Fill in the details below to create a new user account.</p>
+                    </div><!--end col-->
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                <!-- Form Errors -->
+                {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <h6><i data-feather="alert-circle" class="align-self-center icon-xs mr-1"></i> Please correct the following errors:</h6>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field|capfirst }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">
+                                    <i data-feather="user" class="icon-xs mr-1"></i>
+                                    Username <span class="text-danger">*</span>
+                                </label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.username.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Choose a unique username for the user.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    <i data-feather="mail" class="icon-xs mr-1"></i>
+                                    Email Address
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    <i data-feather="user" class="icon-xs mr-1"></i>
+                                    First Name
+                                </label>
+                                {{ form.first_name }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    <i data-feather="user" class="icon-xs mr-1"></i>
+                                    Last Name
+                                </label>
+                                {{ form.last_name }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Fields -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                    <i data-feather="lock" class="icon-xs mr-1"></i>
+                                    Password <span class="text-danger">*</span>
+                                </label>
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.password1.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Password must be at least 8 characters long.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                    <i data-feather="lock" class="icon-xs mr-1"></i>
+                                    Confirm Password <span class="text-danger">*</span>
+                                </label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.password2.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Role and Permissions -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.role.id_for_label }}" class="form-label">
+                                    <i data-feather="shield" class="icon-xs mr-1"></i>
+                                    User Role <span class="text-danger">*</span>
+                                </label>
+                                {{ form.role }}
+                                {% if form.role.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.role.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Select the appropriate role for this user.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.cliente_relacionado.id_for_label }}" class="form-label">
+                                    <i data-feather="user-check" class="icon-xs mr-1"></i>
+                                    Associated Client
+                                </label>
+                                {{ form.cliente_relacionado }}
+                                {% if form.cliente_relacionado.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.cliente_relacionado.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Link this user to a specific client (optional).</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="custom-control custom-switch switch-success">
+                                    {{ form.is_active }}
+                                    <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">
+                                        <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                        Active User
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Active users can log in to the system.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i data-feather="user-plus" class="align-self-center icon-xs mr-2"></i>
+                                    Create User
+                                </button>
+                                <a href="{% url 'user_list' %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                    <i data-feather="x" class="align-self-center icon-xs mr-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Helper Information Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-light-alt">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="info" class="text-primary" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">User Role Guidelines</h6>
+                        <ul class="mb-0 small text-muted">
+                            <li><strong>Admin:</strong> Full system access, can manage users and system settings</li>
+                            <li><strong>Client:</strong> Limited access, can view their own information and policies</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add Bootstrap classes to Django form fields
+document.addEventListener('DOMContentLoaded', function() {
+    // Add form-control class to all inputs and selects
+    const inputs = document.querySelectorAll('input:not([type="checkbox"]), select, textarea');
+    inputs.forEach(function(input) {
+        input.classList.add('form-control');
+    });
+    
+    // Add custom-control-input class to checkboxes
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.classList.add('custom-control-input');
+    });
+    
+    // Form validation
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

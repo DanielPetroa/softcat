@@ -1,0 +1,259 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Delete Geometry - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Delete Geometry</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'geometry_list' %}">Geometries</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'geometry_detail' geometria.pk %}">{{ geometria.nombre }}</a></li>
+                        <li class="breadcrumb-item active">Delete</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'geometry_detail' geometria.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                        Back to Geometry
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Warning Card -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="alert-triangle" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h4 class="card-title mb-0 text-white">Confirm Geometry Deletion</h4>
+                        <p class="mb-0 text-white-50">This action cannot be undone. All related data will be lost.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Geometry Information Display -->
+                <div class="alert alert-light border-left-danger">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if geometria.geometry_type == 'Point' %}
+                                <i data-feather="map-pin" class="text-danger" style="width: 48px; height: 48px;"></i>
+                            {% elif geometria.geometry_type == 'Polygon' %}
+                                <i data-feather="hexagon" class="text-danger" style="width: 48px; height: 48px;"></i>
+                            {% elif geometria.geometry_type == 'LineString' %}
+                                <i data-feather="trending-up" class="text-danger" style="width: 48px; height: 48px;"></i>
+                            {% else %}
+                                <i data-feather="map" class="text-danger" style="width: 48px; height: 48px;"></i>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1">{{ geometria.nombre }}</h5>
+                            <p class="mb-1 text-muted">{{ geometria.geometry_type }} • {{ geometria.id_cliente.nombre }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge badge-soft-primary mr-2">ID: {{ geometria.id_geometria }}</span>
+                                <span class="badge badge-soft-info mr-2">{{ geometria.coordinates_summary }}</span>
+                                {% if geometria.monitoreo_activo %}
+                                    <span class="badge badge-soft-success">Monitoring Active</span>
+                                {% else %}
+                                    <span class="badge badge-soft-secondary">Monitoring Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impact Warning -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="alert-circle" class="icon-xs mr-1 text-danger"></i>
+                            What will be deleted:
+                        </h6>
+                        <ul class="list-unstyled text-muted">
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Geometry data and coordinates</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> All monitoring history</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Associated risk models (future)</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Event tracking data (future)</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Payout options (future)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="info" class="icon-xs mr-1 text-primary"></i>
+                            Geometry Information:
+                        </h6>
+                        <div class="text-muted">
+                            <p class="mb-1"><strong>Client:</strong> {{ geometria.id_cliente.nombre }}</p>
+                            <p class="mb-1"><strong>Type:</strong> {{ geometria.geometry_type }}</p>
+                            <p class="mb-1"><strong>Created:</strong> {{ geometria.creado_en|date:"M d, Y H:i" }}</p>
+                            <p class="mb-1"><strong>Monitoring:</strong> 
+                                {% if geometria.monitoreo_activo %}Active{% else %}Inactive{% endif %}
+                            </p>
+                            <p class="mb-1"><strong>Client Contact:</strong> {{ geometria.id_cliente.contacto_principal }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alternative Actions -->
+                <div class="alert alert-info">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i data-feather="lightbulb" class="text-info" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="col">
+                            <h6 class="mb-1">Consider these alternatives:</h6>
+                            <p class="mb-2">Instead of deleting, you might want to:</p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <a href="{% url 'geometry_toggle_monitoring' geometria.pk %}" class="btn btn-outline-warning btn-sm btn-block">
+                                        <i data-feather="pause-circle" class="icon-xs mr-1"></i>
+                                        {% if geometria.monitoreo_activo %}Disable{% else %}Enable{% endif %} Monitoring
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="{% url 'geometry_edit' geometria.pk %}" class="btn btn-outline-primary btn-sm btn-block">
+                                        <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                                        Edit Geometry
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="border rounded p-3 bg-light">
+                        <h6 class="mb-3">
+                            <i data-feather="shield" class="icon-xs mr-1 text-danger"></i>
+                            Confirmation Required
+                        </h6>
+                        
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmDeletion" required>
+                            <label class="custom-control-label" for="confirmDeletion">
+                                I understand that this geometry and all its data will be permanently deleted
+                            </label>
+                        </div>
+                        
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmNotification" required>
+                            <label class="custom-control-label" for="confirmNotification">
+                                I will notify the client ({{ geometria.id_cliente.nombre }}) about this change if necessary
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deletionReason" class="form-label">
+                                <i data-feather="message-square" class="icon-xs mr-1"></i>
+                                Reason for deletion (Optional):
+                            </label>
+                            <textarea class="form-control" id="deletionReason" name="reason" rows="3" 
+                                      placeholder="Provide a reason for deleting this geometry..."></textarea>
+                            <small class="form-text text-muted">This information will be logged for audit purposes.</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-danger btn-lg px-5" id="confirmBtn" disabled>
+                                    <i data-feather="trash-2" class="align-self-center icon-xs mr-2"></i>
+                                    Delete Geometry Permanently
+                                </button>
+                                <a href="{% url 'geometry_detail' geometria.pk %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                    <i data-feather="x" class="align-self-center icon-xs mr-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Additional Information Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-light-alt">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="help-circle" class="text-info" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Need Help?</h6>
+                        <p class="mb-0 text-muted">
+                            If you're unsure about deleting this geometry, contact your system administrator 
+                            or consider disabling monitoring instead. Deleted geometries cannot be recovered.
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <a href="/admin/" class="btn btn-outline-info btn-sm" target="_blank">
+                            <i data-feather="external-link" class="icon-xs mr-1"></i>
+                            Django Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmDeletion = document.getElementById('confirmDeletion');
+    const confirmNotification = document.getElementById('confirmNotification');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    function updateButtonState() {
+        if (confirmDeletion.checked && confirmNotification.checked) {
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('btn-secondary');
+            confirmBtn.classList.add('btn-danger');
+        } else {
+            confirmBtn.disabled = true;
+            confirmBtn.classList.remove('btn-danger');
+            confirmBtn.classList.add('btn-secondary');
+        }
+    }
+
+    confirmDeletion.addEventListener('change', updateButtonState);
+    confirmNotification.addEventListener('change', updateButtonState);
+
+    // Initialize button state
+    updateButtonState();
+
+    // Form submission confirmation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!confirm('Are you absolutely sure you want to delete this geometry? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

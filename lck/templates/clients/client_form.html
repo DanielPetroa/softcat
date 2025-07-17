@@ -1,0 +1,452 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}
+    {% if action == 'create' %}Create Client{% else %}Edit Client{% endif %} - LCK Insurance System
+{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">
+                        {% if action == 'create' %}Create New Client{% else %}Edit Client: {{ cliente.nombre }}{% endif %}
+                    </h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'client_list' %}">Clients</a></li>
+                        <li class="breadcrumb-item active">
+                            {% if action == 'create' %}Create Client{% else %}Edit Client{% endif %}
+                        </li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'client_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                        Back to Clients
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">
+                            <i data-feather="{% if action == 'create' %}user-plus{% else %}edit-2{% endif %}" class="align-self-center icon-xs mr-2"></i>
+                            Client Information
+                        </h4>
+                        <p class="text-muted mb-0">
+                            {% if action == 'create' %}
+                                Fill in the details below to create a new client profile.
+                            {% else %}
+                                Update the client details below. All fields marked with * are required.
+                            {% endif %}
+                        </p>
+                    </div><!--end col-->
+                    {% if action == 'edit' and cliente %}
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            {% if cliente.activo %}
+                                <span class="badge badge-soft-success mr-2">
+                                    <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                    Active
+                                </span>
+                            {% else %}
+                                <span class="badge badge-soft-secondary mr-2">
+                                    <i data-feather="x-circle" class="icon-xs mr-1"></i>
+                                    Inactive
+                                </span>
+                            {% endif %}
+                            <span class="badge badge-soft-primary">
+                                ID: {{ cliente.id_cliente }}
+                            </span>
+                        </div>
+                    </div><!--end col-->
+                    {% endif %}
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                <!-- Form Errors -->
+                {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <h6><i data-feather="alert-circle" class="align-self-center icon-xs mr-1"></i> Please correct the following errors:</h6>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field|capfirst }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="info" class="icon-xs mr-2"></i>
+                                Basic Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                            <i data-feather="building" class="icon-xs mr-1"></i>
+                                            {{ form.nombre.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.nombre }}
+                                        {% if form.nombre.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.nombre.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Complete legal name of the client.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                            <i data-feather="tag" class="icon-xs mr-1"></i>
+                                            {{ form.tipo.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.tipo }}
+                                        {% if form.tipo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.tipo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.pais.id_for_label }}" class="form-label">
+                                            <i data-feather="map-pin" class="icon-xs mr-1"></i>
+                                            {{ form.pais.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.pais }}
+                                        {% if form.pais.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.pais.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.sector.id_for_label }}" class="form-label">
+                                            <i data-feather="briefcase" class="icon-xs mr-1"></i>
+                                            {{ form.sector.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.sector }}
+                                        {% if form.sector.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.sector.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.sector_retail.id_for_label }}" class="form-label">
+                                            <i data-feather="shopping-bag" class="icon-xs mr-1"></i>
+                                            {{ form.sector_retail.label }}
+                                        </label>
+                                        {{ form.sector_retail }}
+                                        {% if form.sector_retail.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.sector_retail.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Required only if sector is Retail.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-switch switch-success mt-4">
+                                            {{ form.activo }}
+                                            <label class="custom-control-label" for="{{ form.activo.id_for_label }}">
+                                                <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                                {{ form.activo.label }}
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">Inactive clients are hidden from active lists.</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                            <i data-feather="map" class="icon-xs mr-1"></i>
+                                            {{ form.direccion.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.direccion }}
+                                        {% if form.direccion.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.direccion.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Contact Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="user" class="icon-xs mr-2"></i>
+                                Main Contact Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.contacto_principal.id_for_label }}" class="form-label">
+                                            <i data-feather="user" class="icon-xs mr-1"></i>
+                                            {{ form.contacto_principal.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.contacto_principal }}
+                                        {% if form.contacto_principal.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.contacto_principal.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.correo_principal.id_for_label }}" class="form-label">
+                                            <i data-feather="mail" class="icon-xs mr-1"></i>
+                                            {{ form.correo_principal.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.correo_principal }}
+                                        {% if form.correo_principal.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.correo_principal.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.celular_principal.id_for_label }}" class="form-label">
+                                            <i data-feather="phone" class="icon-xs mr-1"></i>
+                                            {{ form.celular_principal.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.celular_principal }}
+                                        {% if form.celular_principal.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.celular_principal.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alternate Contact Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="users" class="icon-xs mr-2"></i>
+                                Alternate Contact Information
+                                <small class="text-muted">(Optional)</small>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.contacto_alterno.id_for_label }}" class="form-label">
+                                            <i data-feather="user" class="icon-xs mr-1"></i>
+                                            {{ form.contacto_alterno.label }}
+                                        </label>
+                                        {{ form.contacto_alterno }}
+                                        {% if form.contacto_alterno.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.contacto_alterno.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.correo_alterno.id_for_label }}" class="form-label">
+                                            <i data-feather="mail" class="icon-xs mr-1"></i>
+                                            {{ form.correo_alterno.label }}
+                                        </label>
+                                        {{ form.correo_alterno }}
+                                        {% if form.correo_alterno.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.correo_alterno.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.celular_alterno.id_for_label }}" class="form-label">
+                                            <i data-feather="phone" class="icon-xs mr-1"></i>
+                                            {{ form.celular_alterno.label }}
+                                        </label>
+                                        {{ form.celular_alterno }}
+                                        {% if form.celular_alterno.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.celular_alterno.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lockton Executive Section -->
+                    <div class="card bg-light-alt mb-4">
+                        <div class="card-header bg-transparent border-bottom-0">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="shield" class="icon-xs mr-2"></i>
+                                Lockton Executive Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.ejecutivo_lockton.id_for_label }}" class="form-label">
+                                            <i data-feather="user-check" class="icon-xs mr-1"></i>
+                                            {{ form.ejecutivo_lockton.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.ejecutivo_lockton }}
+                                        {% if form.ejecutivo_lockton.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.ejecutivo_lockton.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Assigned Lockton executive for this client.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.correo_ejecutivo.id_for_label }}" class="form-label">
+                                            <i data-feather="mail" class="icon-xs mr-1"></i>
+                                            {{ form.correo_ejecutivo.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.correo_ejecutivo }}
+                                        {% if form.correo_ejecutivo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.correo_ejecutivo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i data-feather="{% if action == 'create' %}user-plus{% else %}save{% endif %}" class="align-self-center icon-xs mr-2"></i>
+                                    {% if action == 'create' %}Create Client{% else %}Update Client{% endif %}
+                                </button>
+                                <a href="{% if action == 'edit' and cliente %}{% url 'client_detail' cliente.pk %}{% else %}{% url 'client_list' %}{% endif %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                    <i data-feather="x" class="align-self-center icon-xs mr-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Helper Information Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card bg-light-alt">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="info" class="text-primary" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Client Information Guidelines</h6>
+                        <ul class="mb-0 small text-muted">
+                            <li><strong>Name:</strong> Use the complete legal name as it appears in official documents</li>
+                            <li><strong>Sector:</strong> Select the primary business sector. Use "Retail" for retail businesses</li>
+                            <li><strong>Contacts:</strong> Main contact is required, alternate contact is optional but recommended</li>
+                            <li><strong>Executive:</strong> Assign the responsible Lockton executive for account management</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+    
+    // Sector retail dependency
+    const sectorSelect = document.getElementById('{{ form.sector.id_for_label }}');
+    const sectorRetailField = document.getElementById('{{ form.sector_retail.id_for_label }}').closest('.form-group');
+    
+    function toggleSectorRetail() {
+        if (sectorSelect.value === 'Retail') {
+            sectorRetailField.style.display = 'block';
+            document.getElementById('{{ form.sector_retail.id_for_label }}').setAttribute('required', 'required');
+        } else {
+            sectorRetailField.style.display = 'none';
+            document.getElementById('{{ form.sector_retail.id_for_label }}').removeAttribute('required');
+            document.getElementById('{{ form.sector_retail.id_for_label }}').value = '';
+        }
+    }
+    
+    sectorSelect.addEventListener('change', toggleSectorRetail);
+    toggleSectorRetail(); // Run on page load
+});
+</script>
+{% endblock %}

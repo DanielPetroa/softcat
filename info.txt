@@ -1,0 +1,156 @@
+erDiagram
+    CLIENTES ||--o{ GEOMETRIAS : "registra"
+    GEOMETRIAS ||--o{ MODELACIONES : "utiliza"
+    PERILS ||--o{ MODELACIONES : "utiliza"
+    MODELOS_RIESGO ||--o{ MODELACIONES : "utiliza"
+    GEOMETRIAS ||--o{ PAYOUT_OPTIONS : "DETALLE"
+    MODELACIONES ||--o{ COTIZACIONES : "genera"
+    COTIZACIONES ||--o{ POLIZAS : "deriva_en"
+    REASEGURADORAS ||--o{ POLIZAS : "participa"
+    POLIZAS ||--o{ EVENTOS : "registra"
+    GEOMETRIAS ||--o{ EVENTOS : "monitorea"
+    EVENTOS ||--o{ SINIESTROS : "desencadena" 
+    SINIESTROS ||--o{ ALERTAS : "desencadena"
+    EVENTOS ||--o{ ALERTAS : "genera"
+
+    CLIENTES {
+        int id_cliente PK
+        varchar nombre
+        varchar tipo
+        varchar sector
+        varchar sector_retail
+        varchar pais
+        varchar direccion
+        varchar contacto_principal
+        varchar correo_principal
+        varchar celular_principal
+        varchar contacto_alterno
+        varchar correo_alterno
+        varchar celular_alterno
+        varchar ejecutivo_lockton
+        varchar correo_ejecutivo
+        timestamp creado_en
+        boolean activo
+    }
+
+    GEOMETRIAS {
+        int id_geometria PK
+        int id_cliente FK
+        varchar nombre
+        geography geojson
+        boolean monitoreo_activo
+        timestamp creado_en
+    }
+
+    PAYOUT_OPTIONS {
+        int id_PAYOUT_OPTION PK
+        int id_geometria FK
+        string TriggerType
+        string IntVar
+        string IntVal1
+        string IntVal2
+        string FilterVar
+        string FilterValue
+        string FilterCondition
+        string PayoutPercentofLocLimit1
+        string PayoutPercentofLocLimit2
+        string PayoutMethodByGeom
+        boolean activo
+    }
+
+    PERILS {
+        int id_perils PK
+        string codigo
+        string nombre
+        string descripcion
+        boolean activo
+    }
+
+    MODELOS_RIESGO {
+        int ID_MODELO PK
+        string nombre
+        string version
+        string parametros
+        date fecha_creacion
+    }
+
+
+    MODELACIONES {
+        int id_modelacion PK
+        int id_geometria FK
+        int id_modelo FK
+        int id_perils FK
+        jsonb parametros
+        numeric prima_estimada
+        numeric burn_rate
+        numeric expected_loss
+        numeric prob_attachment_emp
+        numeric prob_exhaustion_emp
+        numeric prob_attachment_mod
+        numeric prob_exhaustion_mod
+        timestamp creado_en
+    }
+
+        COTIZACIONES {
+        int id_cotizacion PK
+        int id_modelacion FK
+        numeric limite
+        numeric prima
+        numeric tax
+        numeric fee
+        numeric comision
+        varchar estado
+        timestamp fecha_emision
+    }
+
+    REASEGURADORAS {
+        int id_reaseguradora PK
+        varchar nombre
+        varchar front_aseguradora
+        varchar pais
+        varchar contacto_principal
+        varchar correo_principal
+        varchar celular_principal
+        varchar contacto_alterno
+        varchar correo_alterno
+        varchar celular_alterno
+        varchar codigo
+        boolean es_reaseguradora
+    }
+
+    POLIZAS {
+        int id_poliza PK
+        int id_cotizacion FK
+        int id_reaseguradora FK
+        varchar numero
+        date inicio_vigencia
+        date fin_vigencia
+        boolean vigente
+    }
+
+    EVENTOS {
+        int id_evento PK
+        int id_geometria FK
+        varchar tipo
+        numeric magnitud
+        timestamp fecha_deteccion
+        boolean activo_poliza
+    }
+
+    SINIESTROS {
+        int id_siniestro PK
+        int id_evento FK
+        int id_poliza FK
+        numeric monto_estimado
+        varchar estado
+        timestamp fecha_registro
+    }
+
+    ALERTAS {
+        int id_alerta PK
+        int id_siniestro FK
+        int id_evento FK
+        varchar tipo
+        varchar severidad
+        timestamp fecha_generacion
+    }
