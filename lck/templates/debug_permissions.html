@@ -1,0 +1,91 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Debug Permissions{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">🔍 Debug Permissions Information</h4>
+                <p class="text-muted mb-0">Esta vista te ayudará a identificar el problema de permisos</p>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, value in debug_info.items %}
+                        <tr>
+                            <td><strong>{{ key }}</strong></td>
+                            <td>
+                                <code>{{ value|default:"None" }}</code>
+                            </td>
+                            <td>
+                                {% if key == 'decorator_result' %}
+                                    {% if 'PASS' in value %}
+                                        <span class="badge badge-success">✅ OK</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">❌ FAIL</span>
+                                    {% endif %}
+                                {% elif key == 'role_in_list' %}
+                                    {% if value %}
+                                        <span class="badge badge-success">✅ OK</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">❌ FAIL</span>
+                                    {% endif %}
+                                {% elif key == 'cliente_relacionado' %}
+                                    {% if value %}
+                                        <span class="badge badge-success">✅ Assigned</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">⚠️ Not Assigned</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge badge-info">ℹ️ Info</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <hr>
+                
+                <h5>🔧 Possible Solutions:</h5>
+                <div class="alert alert-info">
+                    <strong>Si ves "FAIL: Role not in [admin, cliente]":</strong>
+                    <ul class="mb-0">
+                        <li>Verifica que el role sea exactamente <code>'cliente'</code> (sin espacios extra)</li>
+                        <li>En Django Admin → Users → edita el usuario y verifica el campo "Role"</li>
+                        <li>El role debe ser <code>cliente</code> no <code>client</code></li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <strong>Si ves "Not Assigned" en cliente_relacionado:</strong>
+                    <ul class="mb-0">
+                        <li>Ve a Django Admin → Users → edita el usuario</li>
+                        <li>Asigna un cliente en el campo "Cliente relacionado"</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="{% url 'geometry_list' %}" class="btn btn-primary">
+                        <i data-feather="map"></i>
+                        Try Access Geometries
+                    </a>
+                    <a href="/admin/users/user/" class="btn btn-outline-secondary" target="_blank">
+                        <i data-feather="external-link"></i>
+                        Django Admin Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -27,7 +27,9 @@ def geometry_access_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
-        if request.user.role not in ['admin', 'cliente']:
+        # Soporte para español e inglés
+        allowed_roles = ['admin', 'cliente', 'client']
+        if request.user.role not in allowed_roles:
             messages.error(request, 'No tienes permisos para acceder a esta sección.')
             return redirect('dashboard')
         return view_func(request, *args, **kwargs)
@@ -38,7 +40,7 @@ def get_user_geometries(user):
     """Obtener geometrías según el rol del usuario"""
     if user.role == 'admin':
         return Geometria.objects.all()
-    elif user.role == 'cliente' and user.cliente_relacionado:
+    elif user.role in ['cliente', 'client'] and user.cliente_relacionado:
         return Geometria.objects.filter(id_cliente=user.cliente_relacionado)
     else:
         return Geometria.objects.none()

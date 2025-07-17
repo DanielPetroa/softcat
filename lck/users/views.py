@@ -55,7 +55,7 @@ def dashboard(request):
             'geometrias_activas': Geometria.objects.filter(monitoreo_activo=True).count(),
             'geometrias_inactivas': Geometria.objects.filter(monitoreo_activo=False).count(),
         })
-    elif request.user.role == 'cliente' and request.user.cliente_relacionado:
+    elif request.user.role in ['cliente', 'client'] and request.user.cliente_relacionado:
         # Estadísticas para clientes (solo sus geometrías)
         client_geometrias = Geometria.objects.filter(id_cliente=request.user.cliente_relacionado)
         context.update({
@@ -145,3 +145,43 @@ def user_edit(request, user_id):
         'edit_user': edit_user,
     }
     return render(request, 'users/user_edit.html', context)
+
+#debug
+
+# Agrega esta función a users/views.py
+
+@login_required
+def debug_permissions(request):
+    """Vista para debuggear permisos de geometrías"""
+    
+    debug_info = {
+        'user_authenticated': request.user.is_authenticated,
+        'username': request.user.username,
+        'user_role_raw': repr(request.user.role),  # repr muestra comillas y espacios
+        'user_role_length': len(request.user.role) if request.user.role else 0,
+        'role_equals_cliente': request.user.role == 'cliente',
+        'role_equals_admin': request.user.role == 'admin',
+        'role_in_list': request.user.role in ['admin', 'cliente'],
+        'cliente_relacionado': request.user.cliente_relacionado,
+        'cliente_relacionado_id': request.user.cliente_relacionado.id_cliente if request.user.cliente_relacionado else None,
+    }
+    
+    # Test del decorador manualmente
+    if not request.user.is_authenticated:
+        debug_info['decorator_result'] = 'FAIL: Not authenticated'
+    elif request.user.role not in ['admin', 'cliente']:
+        debug_info['decorator_result'] = f'FAIL: Role "{request.user.role}" not in [admin, cliente]'
+    else:
+        debug_info['decorator_result'] = 'PASS: Should have access'
+    
+    # Test de geometrías
+    try:
+        from geometries.views import get_user_geometries
+        user_geometrias = get_user_geometries(request.user)
+        debug_info['geometrias_count'] = user_geometrias.count()
+        debug_info['geometrias_access'] = 'SUCCESS'
+    except Exception as e:
+        debug_info['geometrias_count'] = 'ERROR'
+        debug_info['geometrias_access'] = str(e)
+    
+    return render(request, 'debug_permissions.html', {'debug_info': debug_info})
