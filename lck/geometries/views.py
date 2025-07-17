@@ -10,6 +10,7 @@ from .models import Geometria
 from .forms import GeometriaForm
 from clients.models import Cliente
 
+# Decorators - DEBEN IR PRIMERO
 def admin_required(view_func):
     """Decorator para requerir rol de admin"""
     def _wrapped_view(request, *args, **kwargs):
@@ -21,8 +22,30 @@ def admin_required(view_func):
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
+def geometry_access_required(view_func):
+    """Decorator para requerir acceso a geometrías (admin o cliente)"""
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.role not in ['admin', 'cliente']:
+            messages.error(request, 'No tienes permisos para acceder a esta sección.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+# Helper functions
+def get_user_geometries(user):
+    """Obtener geometrías según el rol del usuario"""
+    if user.role == 'admin':
+        return Geometria.objects.all()
+    elif user.role == 'cliente' and user.cliente_relacionado:
+        return Geometria.objects.filter(id_cliente=user.cliente_relacionado)
+    else:
+        return Geometria.objects.none()
+
+# Views
 @login_required
-@admin_required
+@geometry_access_required
 def geometry_list(request):
     """Lista de geometrías con búsqueda y filtros"""
     query = request.GET.get('q', '')
@@ -30,7 +53,8 @@ def geometry_list(request):
     tipo_filter = request.GET.get('tipo', '')
     monitoreo_filter = request.GET.get('monitoreo', '')
     
-    geometrias = Geometria.objects.select_related('id_cliente').all().order_by('-creado_en')
+    # Filtrar geometrías según el rol del usuario
+    geometrias = get_user_geometries(request.user).select_related('id_cliente').order_by('-creado_en')
     
     # Aplicar filtros de búsqueda
     if query:
@@ -39,7 +63,8 @@ def geometry_list(request):
             Q(id_cliente__nombre__icontains=query)
         )
     
-    if cliente_filter:
+    # Solo admin puede filtrar por cliente
+    if cliente_filter and request.user.role == 'admin':
         geometrias = geometrias.filter(id_cliente_id=cliente_filter)
     
     if tipo_filter:
@@ -52,12 +77,14 @@ def geometry_list(request):
         elif monitoreo_filter == 'false':
             geometrias = geometrias.filter(monitoreo_activo=False)
     
-    # Obtener listas para filtros
-    clientes = Cliente.objects.filter(activo=True).order_by('nombre')
+    # Obtener listas para filtros (solo para admin)
+    clientes = []
+    if request.user.role == 'admin':
+        clientes = Cliente.objects.filter(activo=True).order_by('nombre')
     
-    # Obtener tipos de geometría únicos
+    # Obtener tipos de geometría únicos de las geometrías del usuario
     tipos_geometria = []
-    for geom in Geometria.objects.exclude(geojson__isnull=True):
+    for geom in geometrias.exclude(geojson__isnull=True):
         if geom.geojson and 'type' in geom.geojson:
             tipos_geometria.append(geom.geojson['type'])
     tipos_geometria = list(set(tipos_geometria))  # Eliminar duplicados
@@ -68,14 +95,17 @@ def geometry_list(request):
     page_obj = paginator.get_page(page_number)
     
     # Estadísticas
-    total_geometrias = Geometria.objects.count()
-    geometrias_activas = Geometria.objects.filter(monitoreo_activo=True).count()
-    geometrias_inactivas = Geometria.objects.filter(monitoreo_activo=False).count()
+    user_geometrias = get_user_geometries(request.user)
+    total_geometrias = user_geometrias.count()
+    geometrias_activas = user_geometrias.filter(monitoreo_activo=True).count()
+    geometrias_inactivas = user_geometrias.filter(monitoreo_activo=False).count()
     
-    # Estadísticas por cliente
-    clientes_con_geometrias = Cliente.objects.annotate(
-        num_geometrias=Count('geometrias')
-    ).filter(num_geometrias__gt=0).count()
+    # Estadísticas por cliente (solo para admin)
+    clientes_con_geometrias = 0
+    if request.user.role == 'admin':
+        clientes_con_geometrias = Cliente.objects.annotate(
+            num_geometrias=Count('geometrias')
+        ).filter(num_geometrias__gt=0).count()
     
     context = {
         'geometrias': page_obj,
@@ -89,15 +119,18 @@ def geometry_list(request):
         'geometrias_activas': geometrias_activas,
         'geometrias_inactivas': geometrias_inactivas,
         'clientes_con_geometrias': clientes_con_geometrias,
+        'is_admin': request.user.role == 'admin',
     }
     
     return render(request, 'geometries/geometry_list.html', context)
 
 @login_required
-@admin_required
+@geometry_access_required
 def geometry_detail(request, pk):
     """Detalle de una geometría específica con mapa"""
-    geometria = get_object_or_404(Geometria, pk=pk)
+    # Obtener geometrías permitidas para el usuario
+    user_geometrias = get_user_geometries(request.user)
+    geometria = get_object_or_404(user_geometrias, pk=pk)
     
     # Preparar datos del mapa
     map_data = {
@@ -110,6 +143,7 @@ def geometry_detail(request, pk):
     context = {
         'geometria': geometria,
         'map_data': json.dumps(map_data),
+        'is_admin': request.user.role == 'admin',
     }
     
     return render(request, 'geometries/geometry_detail.html', context)
@@ -190,10 +224,12 @@ def geometry_delete(request, pk):
     return render(request, 'geometries/geometry_confirm_delete.html', context)
 
 @login_required
-@admin_required
+@geometry_access_required
 def geometry_toggle_monitoring(request, pk):
     """Activar/desactivar monitoreo de geometría"""
-    geometria = get_object_or_404(Geometria, pk=pk)
+    # Obtener geometrías permitidas para el usuario
+    user_geometrias = get_user_geometries(request.user)
+    geometria = get_object_or_404(user_geometrias, pk=pk)
     
     geometria.monitoreo_activo = not geometria.monitoreo_activo
     geometria.save()
@@ -264,10 +300,11 @@ def geometry_validate_geojson(request):
         })
 
 @login_required
-@admin_required
+@geometry_access_required
 def geometry_map_view(request):
     """Vista del mapa con todas las geometrías"""
-    geometrias = Geometria.objects.select_related('id_cliente').filter(
+    # Filtrar geometrías según el rol del usuario
+    geometrias = get_user_geometries(request.user).select_related('id_cliente').filter(
         monitoreo_activo=True
     ).order_by('-creado_en')
     
@@ -287,6 +324,7 @@ def geometry_map_view(request):
     context = {
         'geometries_data': json.dumps(geometries_data),
         'total_geometrias': len(geometries_data),
+        'is_admin': request.user.role == 'admin',
     }
     
     return render(request, 'geometries/geometry_map_view.html', context)

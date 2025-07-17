@@ -144,10 +144,12 @@
                             <i data-feather="list" class="align-self-center icon-xs mr-1"></i>
                             List View
                         </a>
+                        {% if is_admin %}
                         <a href="{% url 'geometry_create' %}" class="btn btn-sm btn-primary">
                             <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
                             Add Geometry
                         </a>
+                        {% endif %}
                     </div>
                 </div><!--end col-->  
             </div><!--end row-->                                                              

@@ -1,49 +1,70 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
+# En users/views.py - Actualizar la función dashboard
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .forms import UserCreateForm, UserEditForm
 from .models import User
+from .forms import UserCreationForm, UserEditForm
+from clients.models import Cliente  # Importar el modelo Cliente
+from geometries.models import Geometria  # Importar el modelo Geometria
 
-def login_view(request):
+def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
     if request.method == 'POST':
-        from django.contrib.auth import authenticate
         username = request.POST['username']
         password = request.POST['password']
-        remember_me = request.POST.get('remember_me')  # Obtener el checkbox
+        remember_me = request.POST.get('remember_me')
         
         user = authenticate(request, username=username, password=password)
-        if user:
+        if user is not None:
             login(request, user)
-            
-            # Configurar la duración de la sesión basada en "Remember me"
             if not remember_me:
-                # Si no marcó "Remember me", la sesión expira al cerrar el navegador
                 request.session.set_expiry(0)
-            else:
-                # Si marcó "Remember me", la sesión dura 30 días (configurable)
-                request.session.set_expiry(30 * 24 * 60 * 60)  # 30 días en segundos
-            
+            messages.success(request, f'Welcome back, {user.username}!')
             return redirect('dashboard')
-        messages.error(request, 'Credenciales inválidas')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    
     return render(request, 'users/login.html')
 
-def logout_view(request):
+def user_logout(request):
     logout(request)
+    messages.success(request, 'You have been logged out successfully.')
     return redirect('login')
 
 @login_required
 def dashboard(request):
-    return render(request, 'users/dashboard.html')
-
-@login_required
-def user_list(request):
-    if request.user.role != 'admin':
-        return redirect('dashboard')
-    users = User.objects.all()
-    return render(request, 'users/user_list.html', {'users': users})
+    """Dashboard principal con estadísticas"""
+    context = {
+        'user': request.user,
+    }
+    
+    # Estadísticas para admins
+    if request.user.role == 'admin':
+        context.update({
+            'total_users': User.objects.count(),
+            'total_clientes': Cliente.objects.count(),
+            'clientes_activos': Cliente.objects.filter(activo=True).count(),
+            'clientes_inactivos': Cliente.objects.filter(activo=False).count(),
+            'total_geometrias': Geometria.objects.count(),
+            'geometrias_activas': Geometria.objects.filter(monitoreo_activo=True).count(),
+            'geometrias_inactivas': Geometria.objects.filter(monitoreo_activo=False).count(),
+        })
+    elif request.user.role == 'cliente' and request.user.cliente_relacionado:
+        # Estadísticas para clientes (solo sus geometrías)
+        client_geometrias = Geometria.objects.filter(id_cliente=request.user.cliente_relacionado)
+        context.update({
+            'total_geometrias': client_geometrias.count(),
+            'geometrias_activas': client_geometrias.filter(monitoreo_activo=True).count(),
+            'geometrias_inactivas': client_geometrias.filter(monitoreo_activo=False).count(),
+        })
+    
+    return render(request, 'users/dashboard.html', context)
 
 @login_required
 def change_password(request):
@@ -52,42 +73,75 @@ def change_password(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
-            messages.success(request, 'Password changed successfully')
+            messages.success(request, 'Your password has been updated successfully!')
             return redirect('dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = PasswordChangeForm(request.user)
+    
     return render(request, 'users/change_password.html', {'form': form})
 
-@login_required
-def user_create(request):
-    if request.user.role != 'admin':
-        return redirect('dashboard')
-    
-    if request.method == 'POST':
-        form = UserCreateForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'User created successfully')
-            return redirect('user_list')
-    else:
-        form = UserCreateForm()
-    
-    return render(request, 'users/user_create.html', {'form': form})
+def admin_required(view_func):
+    """Decorator para requerir rol de admin"""
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.role != 'admin':
+            messages.error(request, 'No tienes permisos para acceder a esta sección.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 @login_required
-def user_edit(request, user_id):
-    if request.user.role != 'admin':
-        return redirect('dashboard')
+@admin_required
+def user_list(request):
+    """Lista de usuarios - solo para admin"""
+    users = User.objects.all().order_by('-date_joined')
+    context = {
+        'users': users,
+    }
+    return render(request, 'users/user_list.html', context)
+
+@login_required
+@admin_required
+def user_create(request):
+    """Crear nuevo usuario - solo para admin"""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, f'Usuario "{user.username}" creado exitosamente.')
+            return redirect('user_list')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = UserCreationForm()
     
-    edit_user = User.objects.get(id=user_id)
+    context = {
+        'form': form,
+    }
+    return render(request, 'users/user_create.html', context)
+
+@login_required
+@admin_required
+def user_edit(request, user_id):
+    """Editar usuario - solo para admin"""
+    edit_user = get_object_or_404(User, id=user_id)
     
     if request.method == 'POST':
         form = UserEditForm(request.POST, instance=edit_user)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'User updated successfully')
+            user = form.save()
+            messages.success(request, f'Usuario "{user.username}" actualizado exitosamente.')
             return redirect('user_list')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
         form = UserEditForm(instance=edit_user)
     
-    return render(request, 'users/user_edit.html', {'form': form, 'edit_user': edit_user})
+    context = {
+        'form': form,
+        'edit_user': edit_user,
+    }
+    return render(request, 'users/user_edit.html', context)
