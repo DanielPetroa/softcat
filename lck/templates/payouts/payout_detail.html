@@ -1,0 +1,395 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Payout Option #{{ payout.id_payout_option }} - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Payout Option Details</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'payout_list' %}">Payout Options</a></li>
+                        <li class="breadcrumb-item active">Option #{{ payout.id_payout_option }}</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <div class="d-flex">
+                        <a href="{% url 'payout_edit' payout.id_payout_option %}" class="btn btn-sm btn-primary mr-2">
+                            <i data-feather="edit-2" class="align-self-center icon-xs mr-1"></i>
+                            Edit Payout
+                        </a>
+                        <a href="{% url 'payout_list' %}" class="btn btn-sm btn-outline-secondary">
+                            <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                            Back to List
+                        </a>
+                    </div>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<!-- Payout Header Card -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-white bg-opacity-20 rounded p-3">
+                            <i data-feather="dollar-sign" class="text-white" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3 class="text-white mb-1">Payout Option #{{ payout.id_payout_option }}</h3>
+                        <p class="mb-1 text-white-50">{{ payout.id_geometria.nombre }} • {{ payout.id_geometria.id_cliente.nombre }}</p>
+                        <div class="d-flex align-items-center">
+                            <span class="badge badge-light mr-2">
+                                <i data-feather="zap" class="icon-xs mr-1"></i>
+                                {{ payout.get_trigger_type_display }}
+                            </span>
+                            <span class="badge badge-light mr-2">
+                                <i data-feather="settings" class="icon-xs mr-1"></i>
+                                {{ payout.get_payout_method_by_geom_display }}
+                            </span>
+                            {% if payout.activo %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="dropdown">
+                            <button class="btn btn-light dropdown-toggle" type="button" data-toggle="dropdown">
+                                <i data-feather="more-horizontal" class="mr-1"></i>
+                                Actions
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{% url 'payout_edit' payout.id_payout_option %}">
+                                    <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                                    Edit Payout
+                                </a>
+                                <a class="dropdown-item" href="{% url 'payout_duplicate' payout.id_payout_option %}">
+                                    <i data-feather="copy" class="icon-xs mr-1"></i>
+                                    Duplicate
+                                </a>
+                                {% if payout.activo %}
+                                    <a class="dropdown-item text-warning" href="{% url 'payout_delete' payout.id_payout_option %}">
+                                        <i data-feather="power" class="icon-xs mr-1"></i>
+                                        Deactivate
+                                    </a>
+                                {% else %}
+                                    <form method="post" action="{% url 'payout_activate' payout.id_payout_option %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-success">
+                                            <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                            Activate
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'geometry_detail' payout.id_geometria.id_geometria %}">
+                                    <i data-feather="map" class="icon-xs mr-1"></i>
+                                    View Geometry
+                                </a>
+                                <a class="dropdown-item" href="{% url 'client_detail' payout.id_geometria.id_cliente.id_cliente %}">
+                                    <i data-feather="user" class="icon-xs mr-1"></i>
+                                    View Client
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payout Information Sections -->
+<div class="row">
+    <!-- Basic Information -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="info" class="icon-xs mr-2"></i>
+                    Basic Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="font-weight-semibold text-muted" style="width: 40%;">Payout ID:</td>
+                                <td><span class="badge badge-soft-primary">{{ payout.id_payout_option }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Geometry:</td>
+                                <td>
+                                    <a href="{% url 'geometry_detail' payout.id_geometria.id_geometria %}" class="text-primary">
+                                        {{ payout.id_geometria.nombre }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Client:</td>
+                                <td>
+                                    <a href="{% url 'client_detail' payout.id_geometria.id_cliente.id_cliente %}" class="text-primary">
+                                        {{ payout.id_geometria.id_cliente.nombre }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Status:</td>
+                                <td>
+                                    {% if payout.activo %}
+                                        <span class="badge badge-soft-success">
+                                            <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-soft-secondary">
+                                            <i data-feather="x-circle" class="icon-xs mr-1"></i>
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Created:</td>
+                                <td>{{ payout.creado_en|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Last Updated:</td>
+                                <td>{{ payout.actualizado_en|date:"M d, Y H:i" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trigger Configuration -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="zap" class="icon-xs mr-2"></i>
+                    Trigger Configuration
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="font-weight-semibold text-muted" style="width: 40%;">Trigger Type:</td>
+                                <td><span class="badge badge-soft-info">{{ payout.get_trigger_type_display }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Variable:</td>
+                                <td><code>{{ payout.int_var }}</code></td>
+                            </tr>
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Threshold 1:</td>
+                                <td><strong>{{ payout.int_val1 }}</strong></td>
+                            </tr>
+                            {% if payout.int_val2 %}
+                            <tr>
+                                <td class="font-weight-semibold text-muted">Threshold 2:</td>
+                                <td><strong>{{ payout.int_val2 }}</strong></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if payout.has_filter %}
+                <hr class="my-3">
+                <h6 class="mb-2">
+                    <i data-feather="filter" class="icon-xs mr-1 text-primary"></i>
+                    Filter Configuration
+                </h6>
+                <div class="bg-light rounded p-3">
+                    <small class="text-muted">Additional Filter:</small><br>
+                    <code>{{ payout.filter_var }} {{ payout.filter_condition }} {{ payout.filter_value }}</code>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payout Configuration -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="dollar-sign" class="icon-xs mr-2"></i>
+                    Payout Configuration
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Payout Method:</td>
+                                        <td><span class="badge badge-soft-secondary">{{ payout.get_payout_method_by_geom_display }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Primary Payout:</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-primary" style="width: {{ payout.payout_percent_limit1 }}%;">
+                                                    {{ payout.payout_percent_limit1 }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% if payout.payout_percent_limit2 %}
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Secondary Payout:</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-success" style="width: {{ payout.payout_percent_limit2 }}%;">
+                                                    {{ payout.payout_percent_limit2 }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h6 class="mb-2">Total Payout Percentage</h6>
+                            <div class="progress mb-3" style="height: 30px;">
+                                <div class="progress-bar bg-primary" style="width: {{ payout.payout_percent_limit1 }}%;">
+                                    {{ payout.payout_percent_limit1 }}%
+                                </div>
+                                {% if payout.payout_percent_limit2 %}
+                                <div class="progress-bar bg-success" style="width: {{ payout.payout_percent_limit2 }}%;">
+                                    {{ payout.payout_percent_limit2 }}%
+                                </div>
+                                {% endif %}
+                            </div>
+                            <h4 class="text-primary">{{ payout.total_payout_percentage }}%</h4>
+                            <small class="text-muted">Total Coverage</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="settings" class="icon-xs mr-2"></i>
+                    Quick Actions
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'payout_edit' payout.id_payout_option %}" class="btn btn-primary btn-sm">
+                        <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                        Edit Configuration
+                    </a>
+                    <a href="{% url 'payout_duplicate' payout.id_payout_option %}" class="btn btn-outline-secondary btn-sm">
+                        <i data-feather="copy" class="icon-xs mr-1"></i>
+                        Duplicate Payout
+                    </a>
+                    <a href="{% url 'geometry_detail' payout.id_geometria.id_geometria %}" class="btn btn-outline-info btn-sm">
+                        <i data-feather="map" class="icon-xs mr-1"></i>
+                        View Geometry
+                    </a>
+                    <button class="btn btn-outline-warning btn-sm" onclick="alert('Simulation feature coming soon!')">
+                        <i data-feather="play" class="icon-xs mr-1"></i>
+                        Test Simulation
+                    </button>
+                    {% if payout.activo %}
+                        <a href="{% url 'payout_delete' payout.id_payout_option %}" class="btn btn-outline-danger btn-sm">
+                            <i data-feather="power" class="icon-xs mr-1"></i>
+                            Deactivate
+                        </a>
+                    {% else %}
+                        <form method="post" action="{% url 'payout_activate' payout.id_payout_option %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                                <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                Activate
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payout Logic Summary -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="cpu" class="icon-xs mr-2"></i>
+                    Payout Logic Summary
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light border-left-primary">
+                    <h6 class="mb-2">
+                        <i data-feather="info" class="icon-xs mr-1 text-primary"></i>
+                        Trigger Condition:
+                    </h6>
+                    <p class="mb-2">
+                        When <code>{{ payout.int_var }}</code> 
+                        {% if payout.trigger_type == 'threshold' %}
+                            reaches or exceeds <strong>{{ payout.int_val1 }}</strong>
+                            {% if payout.int_val2 %} and additionally when it reaches <strong>{{ payout.int_val2 }}</strong>{% endif %}
+                        {% elif payout.trigger_type == 'binary' %}
+                            equals <strong>{{ payout.int_val1 }}</strong>
+                        {% else %}
+                            meets the {{ payout.get_trigger_type_display|lower }} criteria of <strong>{{ payout.int_val1 }}</strong>
+                            {% if payout.int_val2 %} and <strong>{{ payout.int_val2 }}</strong>{% endif %}
+                        {% endif %}
+                        {% if payout.has_filter %}
+                            <br><em>and additionally when {{ payout.filter_var }} {{ payout.filter_condition }} {{ payout.filter_value }}</em>
+                        {% endif %}
+                    </p>
+                    
+                    <h6 class="mb-2">
+                        <i data-feather="dollar-sign" class="icon-xs mr-1 text-success"></i>
+                        Payout Action:
+                    </h6>
+                    <p class="mb-0">
+                        Pay out <strong>{{ payout.payout_percent_limit1 }}%</strong> of the policy limit
+                        {% if payout.payout_percent_limit2 %}
+                            for the first threshold, and an additional <strong>{{ payout.payout_percent_limit2 }}%</strong> for the second threshold
+                        {% endif %}
+                        using the <strong>{{ payout.get_payout_method_by_geom_display|lower }}</strong> calculation method.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

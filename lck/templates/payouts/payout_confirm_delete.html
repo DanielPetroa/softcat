@@ -1,0 +1,277 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Deactivate Payout Option - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Deactivate Payout Option</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'payout_list' %}">Payout Options</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'payout_detail' payout.id_payout_option %}">Option #{{ payout.id_payout_option }}</a></li>
+                        <li class="breadcrumb-item active">Deactivate</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <a href="{% url 'payout_detail' payout.id_payout_option %}" class="btn btn-sm btn-outline-secondary">
+                        <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                        Back to Payout
+                    </a>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Warning Card -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="alert-triangle" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h4 class="card-title mb-0 text-white">Confirm Payout Option Deactivation</h4>
+                        <p class="mb-0 text-white-50">This action will deactivate the payout option but preserve all configuration data.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Payout Information Display -->
+                <div class="alert alert-light border-left-warning">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i data-feather="dollar-sign" class="text-warning" style="width: 48px; height: 48px;"></i>
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1">Payout Option #{{ payout.id_payout_option }}</h5>
+                            <p class="mb-1 text-muted">{{ payout.id_geometria.nombre }} • {{ payout.id_geometria.id_cliente.nombre }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge badge-soft-info mr-2">{{ payout.get_trigger_type_display }}</span>
+                                <span class="badge badge-soft-secondary mr-2">{{ payout.get_payout_method_by_geom_display }}</span>
+                                <span class="badge badge-soft-primary">{{ payout.total_payout_percentage }}% Total Payout</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payout Configuration Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="zap" class="icon-xs mr-1 text-primary"></i>
+                            Trigger Configuration:
+                        </h6>
+                        <div class="bg-light rounded p-3 mb-3">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Type:</small><br>
+                                    <strong>{{ payout.get_trigger_type_display }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Variable:</small><br>
+                                    <code>{{ payout.int_var }}</code>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Threshold 1:</small><br>
+                                    <strong>{{ payout.int_val1 }}</strong>
+                                </div>
+                                {% if payout.int_val2 %}
+                                <div class="col-6">
+                                    <small class="text-muted">Threshold 2:</small><br>
+                                    <strong>{{ payout.int_val2 }}</strong>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <h6 class="mb-2">
+                            <i data-feather="info" class="icon-xs mr-1 text-primary"></i>
+                            What happens when deactivated:
+                        </h6>
+                        <ul class="list-unstyled text-muted">
+                            <li><i data-feather="check" class="icon-xs mr-1 text-success"></i> Configuration data is preserved</li>
+                            <li><i data-feather="check" class="icon-xs mr-1 text-success"></i> Can be reactivated anytime</li>
+                            <li><i data-feather="check" class="icon-xs mr-1 text-success"></i> Historical records remain intact</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Will not trigger any payouts</li>
+                            <li><i data-feather="x" class="icon-xs mr-1 text-danger"></i> Hidden from active payout lists</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="dollar-sign" class="icon-xs mr-1 text-primary"></i>
+                            Payout Configuration:
+                        </h6>
+                        <div class="bg-light rounded p-3 mb-3">
+                            <div class="row">
+                                <div class="col-12">
+                                    <small class="text-muted">Method:</small><br>
+                                    <strong>{{ payout.get_payout_method_by_geom_display }}</strong>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Primary Payout:</small><br>
+                                    <strong>{{ payout.payout_percent_limit1 }}%</strong>
+                                </div>
+                                {% if payout.payout_percent_limit2 %}
+                                <div class="col-6">
+                                    <small class="text-muted">Secondary Payout:</small><br>
+                                    <strong>{{ payout.payout_percent_limit2 }}%</strong>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <hr class="my-2">
+                            <div class="text-center">
+                                <small class="text-muted">Total Coverage:</small><br>
+                                <h5 class="text-primary mb-0">{{ payout.total_payout_percentage }}%</h5>
+                            </div>
+                        </div>
+
+                        {% if payout.has_filter %}
+                        <h6 class="mb-2">
+                            <i data-feather="filter" class="icon-xs mr-1 text-primary"></i>
+                            Filter Configuration:
+                        </h6>
+                        <div class="bg-light rounded p-3">
+                            <code>{{ payout.filter_var }} {{ payout.filter_condition }} {{ payout.filter_value }}</code>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="border rounded p-3 bg-light">
+                        <h6 class="mb-3">
+                            <i data-feather="shield" class="icon-xs mr-1 text-warning"></i>
+                            Confirmation Required
+                        </h6>
+                        
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmDeactivation" required>
+                            <label class="custom-control-label" for="confirmDeactivation">
+                                I understand that this payout option will be deactivated and will not trigger any payments
+                            </label>
+                        </div>
+                        
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmNotification" required>
+                            <label class="custom-control-label" for="confirmNotification">
+                                I will review other payout options for this geometry to ensure adequate coverage
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deactivationReason" class="form-label">
+                                <i data-feather="message-square" class="icon-xs mr-1"></i>
+                                Reason for deactivation (Optional):
+                            </label>
+                            <textarea class="form-control" id="deactivationReason" name="reason" rows="3" 
+                                      placeholder="Provide a reason for deactivating this payout option..."></textarea>
+                            <small class="form-text text-muted">This information will be logged for audit purposes.</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-warning btn-lg px-5" id="confirmBtn" disabled>
+                                    <i data-feather="power" class="align-self-center icon-xs mr-2"></i>
+                                    Deactivate Payout Option
+                                </button>
+                                <a href="{% url 'payout_detail' payout.id_payout_option %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                    <i data-feather="x" class="align-self-center icon-xs mr-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div><!--end col-->
+</div><!--end row-->
+
+<!-- Additional Information Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-light-alt">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i data-feather="help-circle" class="text-info" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Need Help?</h6>
+                        <p class="mb-0 text-muted">
+                            If you need to permanently delete this payout option or have questions about the impact of deactivation, 
+                            please contact your system administrator or use the Django admin interface.
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <a href="/admin/" class="btn btn-outline-info btn-sm" target="_blank">
+                            <i data-feather="external-link" class="icon-xs mr-1"></i>
+                            Django Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmDeactivation = document.getElementById('confirmDeactivation');
+    const confirmNotification = document.getElementById('confirmNotification');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    function updateButtonState() {
+        if (confirmDeactivation.checked && confirmNotification.checked) {
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('btn-secondary');
+            confirmBtn.classList.add('btn-warning');
+        } else {
+            confirmBtn.disabled = true;
+            confirmBtn.classList.remove('btn-warning');
+            confirmBtn.classList.add('btn-secondary');
+        }
+    }
+
+    confirmDeactivation.addEventListener('change', updateButtonState);
+    confirmNotification.addEventListener('change', updateButtonState);
+
+    // Initialize button state
+    updateButtonState();
+
+    // Form submission confirmation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to deactivate this payout option? This action can be reversed later.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

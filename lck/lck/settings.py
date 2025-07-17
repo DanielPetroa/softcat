@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'users',  # Custom user app
     'clients',
     'geometries',  # Geometries app
+    'payouts',
 ]
 
 MIDDLEWARE = [

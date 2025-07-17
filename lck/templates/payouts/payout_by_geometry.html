@@ -1,0 +1,424 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Payout Options for {{ geometry.nombre }} - LCK Insurance System{% endblock %}
+
+{% block content %}
+<!-- Page-Title -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="page-title-box">
+            <div class="row">
+                <div class="col">
+                    <h4 class="page-title">Payout Options for {{ geometry.nombre }}</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">LCK Insurance</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'payout_list' %}">Payout Options</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'geometry_detail' geometry.id_geometria %}">{{ geometry.nome }}</a></li>
+                        <li class="breadcrumb-item active">Payouts</li>
+                    </ol>
+                </div><!--end col-->
+                <div class="col-auto align-self-center">
+                    <div class="d-flex">
+                        <a href="{% url 'payout_create' %}?geometry={{ geometry.id_geometria }}" class="btn btn-sm btn-primary mr-2">
+                            <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
+                            Add Payout Option
+                        </a>
+                        <a href="{% url 'geometry_detail' geometry.id_geometria %}" class="btn btn-sm btn-outline-secondary">
+                            <i data-feather="arrow-left" class="align-self-center icon-xs mr-1"></i>
+                            Back to Geometry
+                        </a>
+                    </div>
+                </div><!--end col-->  
+            </div><!--end row-->                                                              
+        </div><!--end page-title-box-->
+    </div><!--end col-->
+</div><!--end row-->
+<!-- end page title end breadcrumb -->
+
+<!-- Geometry Header Card -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-white bg-opacity-20 rounded p-3">
+                            <i data-feather="map" class="text-white" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3 class="text-white mb-1">{{ geometry.nombre }}</h3>
+                        <p class="mb-1 text-white-50">{{ geometry.id_cliente.nombre }} • {{ geometry.id_cliente.pais }}</p>
+                        <div class="d-flex align-items-center">
+                            <span class="badge badge-light mr-2">ID: {{ geometry.id_geometria }}</span>
+                            {% if geometry.monitoreo_activo %}
+                                <span class="badge badge-success">Monitoring Active</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Monitoring Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="text-center">
+                            <h4 class="text-white mb-0">{{ total_payouts }}</h4>
+                            <small class="text-white-50">Total Payout Options</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    <div class="col">
+                        <p class="text-dark mb-1 font-weight-semibold">Total Payouts</p>
+                        <h3 class="my-2">{{ total_payouts }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-primary"><i class="mdi mdi-trending-up"></i>All Options</span> 
+                            For This Geometry
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="dollar-sign" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div>
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col--> 
+    
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">                                                
+                    <div class="col">
+                        <p class="text-dark mb-1 font-weight-semibold">Active Payouts</p>
+                        <h3 class="my-2">{{ active_payouts }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-success"><i class="mdi mdi-trending-up"></i>Active</span> 
+                            Ready to Trigger
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="check-circle" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div> 
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col--> 
+    
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">                                                
+                    <div class="col">
+                        <p class="text-dark mb-1 font-weight-semibold">Total Coverage</p>
+                        <h3 class="my-2">
+                            {% if total_payouts > 0 %}
+                                {% for payout in payouts %}
+                                    {% if forloop.first %}{{ payout.total_payout_percentage }}{% endif %}
+                                {% endfor %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-info"><i class="mdi mdi-shield-check"></i>Coverage</span> 
+                            Potential Payout
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="shield" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div> 
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col--> 
+    
+    <div class="col-md-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="row d-flex justify-content-center">
+                    <div class="col">  
+                        <p class="text-dark mb-1 font-weight-semibold">Client</p>                                         
+                        <h3 class="my-2 font-18">{{ geometry.id_cliente.nombre|truncatechars:15 }}</h3>
+                        <p class="mb-0 text-truncate text-muted">
+                            <span class="text-warning"><i class="mdi mdi-account"></i>Owner</span> 
+                            Geometry Owner
+                        </p>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <div class="report-main-icon bg-light-alt">
+                            <i data-feather="user" class="align-self-center text-muted icon-md"></i>  
+                        </div>
+                    </div> 
+                </div>
+            </div><!--end card-body--> 
+        </div><!--end card--> 
+    </div> <!--end col-->                               
+</div><!--end row-->
+
+<!-- Payouts Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="card-title">Payout Options for {{ geometry.nombre }}</h4>
+                        <p class="text-muted mb-0">All payout configurations for this geometry.</p>
+                    </div><!--end col-->
+                    <div class="col-auto"> 
+                        <div class="d-flex">
+                            <a href="{% url 'payout_create' %}?geometry={{ geometry.id_geometria }}" class="btn btn-primary btn-sm">
+                                <i data-feather="plus" class="align-self-center icon-xs mr-1"></i>
+                                New Payout Option
+                            </a>
+                        </div>               
+                    </div><!--end col-->
+                </div>  <!--end row-->                                  
+            </div><!--end card-header-->
+            <div class="card-body">
+                {% if payouts %}
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0 table-centered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="border-top-0">ID</th>
+                                <th class="border-top-0">Trigger Configuration</th>
+                                <th class="border-top-0">Thresholds</th>
+                                <th class="border-top-0">Payout Details</th>
+                                <th class="border-top-0">Method</th>
+                                <th class="border-top-0">Status</th>
+                                <th class="border-top-0 text-right">Actions</th>
+                            </tr><!--end tr-->
+                        </thead>
+                        <tbody>
+                            {% for payout in payouts %}
+                            <tr>
+                                <td>
+                                    <span class="badge badge-soft-primary">{{ payout.id_payout_option }}</span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <span class="badge badge-soft-info mb-1">{{ payout.get_trigger_type_display }}</span><br>
+                                        <small class="text-muted">
+                                            <i data-feather="activity" class="icon-xs mr-1"></i>
+                                            <code>{{ payout.int_var }}</code>
+                                        </small>
+                                        {% if payout.has_filter %}
+                                            <br><small class="text-warning">
+                                                <i data-feather="filter" class="icon-xs mr-1"></i>
+                                                Filtered
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>{{ payout.int_val1 }}</strong>
+                                        {% if payout.int_val2 %}
+                                            <br><span class="text-muted">+ {{ payout.int_val2 }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="progress mb-1" style="height: 15px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ payout.payout_percent_limit1 }}%;" title="Primary: {{ payout.payout_percent_limit1 }}%"></div>
+                                            {% if payout.payout_percent_limit2 %}
+                                            <div class="progress-bar bg-success" style="width: {{ payout.payout_percent_limit2 }}%;" title="Secondary: {{ payout.payout_percent_limit2 }}%"></div>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ payout.payout_percent_limit1 }}%
+                                            {% if payout.payout_percent_limit2 %}+ {{ payout.payout_percent_limit2 }}%{% endif %}
+                                            = <strong>{{ payout.total_payout_percentage }}%</strong>
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-soft-secondary">{{ payout.get_payout_method_by_geom_display }}</span>
+                                </td>
+                                <td>
+                                    {% if payout.activo %}
+                                        <span class="badge badge-soft-success">Active</span>
+                                    {% else %}
+                                        <span class="badge badge-soft-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    <div class="dropdown d-inline-block">
+                                        <a class="dropdown-toggle arrow-none" id="dLabel{{ payout.id_payout_option }}" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                            <i class="las la-ellipsis-v font-20 text-muted"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dLabel{{ payout.id_payout_option }}">
+                                            <a class="dropdown-item" href="{% url 'payout_detail' payout.id_payout_option %}">
+                                                <i data-feather="eye" class="icon-xs mr-1"></i>
+                                                View Details
+                                            </a>
+                                            <a class="dropdown-item" href="{% url 'payout_edit' payout.id_payout_option %}">
+                                                <i data-feather="edit-2" class="icon-xs mr-1"></i>
+                                                Edit Payout
+                                            </a>
+                                            <a class="dropdown-item" href="{% url 'payout_duplicate' payout.id_payout_option %}">
+                                                <i data-feather="copy" class="icon-xs mr-1"></i>
+                                                Duplicate
+                                            </a>
+                                            {% if payout.activo %}
+                                                <a class="dropdown-item text-warning" href="{% url 'payout_delete' payout.id_payout_option %}">
+                                                    <i data-feather="power" class="icon-xs mr-1"></i>
+                                                    Deactivate
+                                                </a>
+                                            {% else %}
+                                                <a class="dropdown-item text-success" href="{% url 'payout_activate' payout.id_payout_option %}">
+                                                    <i data-feather="check-circle" class="icon-xs mr-1"></i>
+                                                    Activate
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table><!--end /table-->
+                </div><!--end /tableresponsive-->
+
+                {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <i data-feather="dollar-sign" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                    <h5 class="text-muted">No payout options configured</h5>
+                    <p class="text-muted">This geometry doesn't have any payout options yet. Create the first one to enable risk coverage.</p>
+                    <a href="{% url 'payout_create' %}?geometry={{ geometry.id_geometria }}" class="btn btn-primary">
+                        <i data-feather="plus" class="mr-1"></i>
+                        Create First Payout Option
+                    </a>
+                </div>
+                {% endif %}
+            </div><!--end card-body-->
+        </div><!--end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+
+<!-- Quick Actions and Summary -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="info" class="icon-xs mr-2"></i>
+                    Geometry Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted" style="width: 40%;">Geometry Name:</td>
+                                        <td>{{ geometry.nombre }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Client:</td>
+                                        <td>
+                                            <a href="{% url 'client_detail' geometry.id_cliente.id_cliente %}" class="text-primary">
+                                                {{ geometry.id_cliente.nombre }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Country:</td>
+                                        <td>{{ geometry.id_cliente.pais }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Monitoring:</td>
+                                        <td>
+                                            {% if geometry.monitoreo_activo %}
+                                                <span class="badge badge-soft-success">Active</span>
+                                            {% else %}
+                                                <span class="badge badge-soft-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-semibold text-muted">Created:</td>
+                                        <td>{{ geometry.creado_en|date:"M d, Y" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2">
+                            <i data-feather="map" class="icon-xs mr-1 text-primary"></i>
+                            Geometry Type:
+                        </h6>
+                        <div class="bg-light rounded p-3">
+                            {% if geometry.geojson.type == 'Point' %}
+                                <i data-feather="map-pin" class="icon-sm mr-2 text-info"></i>
+                                <span class="badge badge-soft-info">Point Geometry</span>
+                            {% elif geometry.geojson.type == 'Polygon' %}
+                                <i data-feather="hexagon" class="icon-sm mr-2 text-success"></i>
+                                <span class="badge badge-soft-success">Polygon Geometry</span>
+                            {% elif geometry.geojson.type == 'LineString' %}
+                                <i data-feather="trending-up" class="icon-sm mr-2 text-warning"></i>
+                                <span class="badge badge-soft-warning">Line Geometry</span>
+                            {% else %}
+                                <i data-feather="map" class="icon-sm mr-2 text-muted"></i>
+                                <span class="badge badge-soft-secondary">{{ geometry.geojson.type }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i data-feather="zap" class="icon-xs mr-2"></i>
+                    Quick Actions
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'payout_create' %}?geometry={{ geometry.id_geometria }}" class="btn btn-primary btn-sm">
+                        <i data-feather="plus" class="icon-xs mr-1"></i>
+                        Add New Payout
+                    </a>
+                    <a href="{% url 'geometry_detail' geometry.id_geometria %}" class="btn btn-outline-info btn-sm">
+                        <i data-feather="map" class="icon-xs mr-1"></i>
+                        View Geometry Details
+                    </a>
+                    <a href="{% url 'client_detail' geometry.id_cliente.id_cliente %}" class="btn btn-outline-secondary btn-sm">
+                        <i data-feather="user" class="icon-xs mr-1"></i>
+                        View Client Profile
+                    </a>
+                    <button class="btn btn-outline-warning btn-sm" onclick="alert('Risk modeling feature coming soon!')">
+                        <i data-feather="trending-up" class="icon-xs mr-1"></i>
+                        Run Risk Model
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
