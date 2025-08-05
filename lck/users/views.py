@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from .models import User
-from .forms import UserCreationForm, UserEditForm
+from .forms import UserCreateForm, UserEditForm
 from clients.models import Cliente  # Importar el modelo Cliente
 from geometries.models import Geometria  # Importar el modelo Geometria
 
@@ -108,7 +108,7 @@ def user_list(request):
 def user_create(request):
     """Crear nuevo usuario - solo para admin"""
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
             messages.success(request, f'Usuario "{user.username}" creado exitosamente.')
@@ -116,7 +116,7 @@ def user_create(request):
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
-        form = UserCreationForm()
+        form = UserCreateForm()
     
     context = {
         'form': form,
